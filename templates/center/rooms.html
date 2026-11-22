@@ -1,0 +1,23 @@
+{% extends "center/base.html" %}
+{# The centre's bookable rooms (SCH-001). Archived rooms are listed too: a room that history references is archived, never hidden or deleted. Nothing here reads another centre (RULE 6.1). #}
+{% block content %}
+  <section id="rooms">
+    <p>{{ ui.rooms_heading }}</p>
+    {% if rooms %}
+    {% for r in rooms %}
+      <div id="room-{{ r.number }}">
+        <p>{{ r.number }}</p>
+        <p>{{ r.name }}</p>
+        <p>{{ r.capacity }}</p>
+        <p>{{ r.location }}</p>
+        <p id="room_status-{{ r.number }}">{{ r.status }}</p>
+      </div>
+    {% endfor %}
+    {% else %}
+      <p id="rooms_none">{{ ui.rooms_none }}</p>
+    {% endif %}
+  </section>
+  <p id="manage_rooms">
+    <a href="/o/{{ center.slug }}/center/rooms/manage/" data-kind="rooms_manage">{{ ui.rooms_manage_heading }}</a>
+  </p>
+{% endblock %}

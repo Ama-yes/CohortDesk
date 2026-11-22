@@ -1,0 +1,35 @@
+{% extends "center/base.html" %}
+{# This centre's payments, grouped under each fee agreement (FIN-006). Nothing here reads another centre (RULE 6.1). #}
+{% block content %}
+  <section id="finances_payments">
+    <p>{{ ui.payments_heading }}</p>
+    <p>{{ ui.payments_hint }}</p>
+    {% if rows %}
+    {% for r in rows %}
+      <div id="payments-for-{{ r.code }}">
+        <p>{{ r.agreement }}</p>
+        <p>{{ r.code }}</p>
+        {% for p in r.payments %}
+          <div id="payment-{{ p.id }}">
+            <dl>
+              <div><dt>{{ ui.payment_row_number }}</dt><dd><a href="/o/{{ center.slug }}/center/finances/payments/{{ p.id }}/" data-kind="payment">{{ p.id }}</a></dd></div>
+              <div><dt>{{ ui.payment_row_amount }}</dt><dd>{{ p.amount }}</dd></div>
+              <div><dt>{{ ui.payment_row_received }}</dt><dd>{{ p.received }}</dd></div>
+              <div><dt>{{ ui.payment_row_method }}</dt><dd>{{ p.method }}</dd></div>
+              <div><dt>{{ ui.payment_row_status }}</dt><dd>{{ p.status }}</dd></div>
+              <div><dt>{{ ui.payment_row_receipt }}</dt><dd>{{ p.receipt }}</dd></div>
+              <div><dt>{{ ui.payment_row_actor }}</dt><dd>{{ p.actor }}</dd></div>
+              <div><dt>{{ ui.payment_row_at }}</dt><dd>{{ p.at }}</dd></div>
+            </dl>
+          </div>
+        {% endfor %}
+      </div>
+    {% endfor %}
+    {% else %}
+      <p id="payments_none">{{ none }}</p>
+    {% endif %}
+  </section>
+  <p id="manage_payments">
+    <a href="/o/{{ center.slug }}/center/finances/payments/manage/" data-kind="payments_manage">{{ ui.payments_manage_heading }}</a>
+  </p>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends "center/base.html" %}
+{# One cohort of this centre, in full, with the students enrolled in it (COH-003/COH-004). The course is shown as a fact, not a field: a cohort delivers one course (COH-002). This page answers only about this centre's own record (RULE 6.1). #}
+{% block content %}
+  <section id="cohort-{{ number }}">
+    <dl>
+      {% for p in profile %}<div id="{{ p.id }}"><dt>{{ p.title }}</dt><dd>{{ p.value }}</dd></div>
+      {% endfor %}
+    </dl>
+  </section>
+  <section id="cohort_enrollments">
+    <p>{{ ui.enrollments_in_cohort }}</p>
+    {% if enrollments %}
+    {% for e in enrollments %}
+      <div id="enrollment-{{ e.number }}">
+        <p>{{ e.number }}</p>
+        <p>{{ e.student_number }}</p>
+        <p>{{ e.student_name }}</p>
+        <p>{{ e.status }}</p>
+        <p>{{ e.fee }}</p>
+        <p>{{ e.enrolled_at }}</p>
+      </div>
+    {% endfor %}
+    {% else %}
+      <p id="enrollments_none">{{ ui.enrollments_none }}</p>
+    {% endif %}
+  </section>
+  <section id="cohort_instructors">
+    <p>{{ ui.cohort_instructors_heading }}</p>
+    {% if instructors %}
+    {% for i in instructors %}
+      <div id="cohort_instructor-{{ i.number }}">
+        <p>{{ i.name }}</p>
+        <a href="/o/{{ center.slug }}/center/staff/{{ i.number }}/" data-kind="staff_member">{{ i.number }}</a>
+      </div>
+    {% endfor %}
+    {% else %}
+      <p id="cohort_instructors_none">{{ ui.cohort_instructors_none }}</p>
+    {% endif %}
+  </section>
+  <p id="manage_cohorts">
+    <a href="/o/{{ center.slug }}/center/cohorts/manage/" data-kind="cohorts_manage">{{ ui.cohorts_manage_heading }}</a>
+  </p>
+{% endblock %}

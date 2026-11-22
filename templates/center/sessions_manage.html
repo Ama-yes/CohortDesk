@@ -1,0 +1,17 @@
+{% extends "center/base.html" %}
+{# The page a session is scheduled on and changed on (SCH-002..SCH-010). One action here. The form is on this page, and after the attempt the person stays on this page and sees what was not accepted and why (RULE 6.3). #}
+{% block content %}
+  <section id="sessions_manage">
+    <p>{{ ui.sessions_manage_heading }}</p>
+    <p id="sessions_manage_intro">{{ notice }}</p>
+    <dl>
+      {% for f in fields %}
+        <div id="{{ f.id }}"><dt>{{ f.title }}</dt><dd>{{ f.value }}</dd></div>
+        {% if f.problem %}<p id="{{ f.id }}_problem">{{ f.problem }}</p>{% endif %}
+      {% endfor %}
+    </dl>
+  </section>
+  <p id="list_sessions">
+    <a href="/o/{{ center.slug }}/center/sessions/" data-kind="sessions">{{ ui.sessions_heading }}</a>
+  </p>
+{% endblock %}

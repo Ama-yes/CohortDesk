@@ -1,0 +1,22 @@
+{% extends "center/base.html" %}
+{# This centre's receipts, the written records of payments (FIN-007). Nothing here reads another centre (RULE 6.1). #}
+{% block content %}
+  <section id="finances_receipts">
+    <p>{{ ui.receipts_heading }}</p>
+    <p>{{ ui.receipts_hint }}</p>
+    {% if rows %}
+    {% for r in rows %}
+      <div id="receipt-{{ r.id }}">
+        <dl>
+          <div><dt>{{ ui.receipt_row_number }}</dt><dd><a href="/o/{{ center.slug }}/center/finances/receipts/{{ r.id }}/" data-kind="receipt">{{ r.id }}</a></dd></div>
+          <div><dt>{{ ui.receipt_row_payment }}</dt><dd>{{ r.payment }}</dd></div>
+          <div><dt>{{ ui.receipt_row_amount }}</dt><dd>{{ r.amount }}</dd></div>
+          <div><dt>{{ ui.receipt_row_date }}</dt><dd>{{ r.date }}</dd></div>
+        </dl>
+      </div>
+    {% endfor %}
+    {% else %}
+      <p id="receipts_none">{{ none }}</p>
+    {% endif %}
+  </section>
+{% endblock %}

@@ -1,0 +1,73 @@
+{% extends "center/base.html" %}
+{# An instructor's own staff record at this centre (STAFF-004, Phase 3A). The viewer's own identity decides what is shown: a number typed in the address changes nothing, so one person can never read another's record here. When nothing is linked yet, the page says so and points at the linking, without ever naming a candidate account. Cohorts are listed without anchors here: an instructor may see their own cohorts but open only courses (academics.course.view). #}
+{% block content %}
+  <section id="staff_self">
+    <p id="staff_self_heading">{{ ui.staff_self_heading }}</p>
+    {% if message %}
+      <p id="staff_self_none">{{ message }}</p>
+      <p id="staff_self_prompt">{{ ui.staff_self_prompt }}</p>
+    {% endif %}
+    {% if archived %}<p id="staff_self_archived">{{ archived }}</p>{% endif %}
+    {% if number %}
+      <p id="staff_self_record">{{ record_line }}</p>
+      <dl>
+        {% for p in profile %}<div id="{{ p.id }}"><dt>{{ p.title }}</dt><dd>{{ p.value }}</dd></div>
+        {% endfor %}
+      </dl>
+    {% endif %}
+  </section>
+  {% if number %}
+  <section id="self_courses">
+    <p>{{ ui.assigned_courses_heading }}</p>
+    {% if courses %}
+    {% for c in courses %}
+      <div id="self_course-{{ c.number }}">
+        <p>{{ c.title }}</p>
+        <a href="/o/{{ center.slug }}/center/courses/{{ c.number }}/" data-kind="course">{{ c.number }}</a>
+      </div>
+    {% endfor %}
+    {% else %}
+      <p id="self_courses_none">{{ ui.assigned_courses_none }}</p>
+    {% endif %}
+  </section>
+  <section id="self_cohorts">
+    <p>{{ ui.assigned_cohorts_heading }}</p>
+    {% if cohorts %}
+    {% for c in cohorts %}
+      <div id="self_cohort-{{ c.number }}">
+        <p>{{ c.name }}</p>
+      </div>
+    {% endfor %}
+    {% else %}
+      <p id="self_cohorts_none">{{ ui.assigned_cohorts_none }}</p>
+    {% endif %}
+  </section>
+  <section id="self_sessions">
+    <p id="self_sessions_heading">{{ ui.staff_sessions_heading }}</p>
+    {% if sessions %}
+    {% for s in sessions %}
+      <div id="self_session-{{ s.number }}">
+        <p>{{ s.number }}</p>
+        <p>{{ s.cohort }}</p>
+        <p>{{ s.course }}</p>
+        <p>{{ s.start }}</p>
+        <p>{{ s.end }}</p>
+        <p>{{ s.note }}</p>
+        <p id="self_session_present-{{ s.number }}">{{ s.present }}</p>
+        <p id="self_session_absent-{{ s.number }}">{{ s.absent }}</p>
+        <p id="self_session_late-{{ s.number }}">{{ s.late }}</p>
+        <p id="self_session_excused-{{ s.number }}">{{ s.excused }}</p>
+        <p id="self_session_records-{{ s.number }}">{{ s.records }}</p>
+        <a href="/o/{{ center.slug }}/center/attendance/{{ s.number }}/" data-kind="attendance_session">{{ s.number }}</a>
+      </div>
+    {% endfor %}
+    <dl id="self_sessions_totals">
+      {% for t in sessions_total %}<div id="{{ t.id }}"><dt>{{ t.title }}</dt><dd>{{ t.value }}</dd></div>
+      {% endfor %}
+    </dl>
+    {% else %}
+      <p id="self_sessions_none">{{ ui.staff_sessions_none }}</p>
+    {% endif %}
+  </section>
+  {% endif %}
+{% endblock %}

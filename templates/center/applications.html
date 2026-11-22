@@ -1,0 +1,23 @@
+{% extends "center/base.html" %}
+{# The page a tenant centre's applications are listed on (ADM-001, ADM-002). Archived applications stay listed: nothing recorded is ever dropped from the page, only set to a status (ADM-008). Each row is this centre's own record (RULE 6.1). #}
+{% block content %}
+  <section id="applications">
+    <p>{{ ui.applications_heading }}</p>
+    <p id="applications_notice">{{ notice }}</p>
+    {% if applications %}
+    {% for a in applications %}
+      <div id="application-{{ a.number }}">
+        <p>{{ a.number }}</p>
+        <p>{{ a.name }}</p>
+        <p>{{ a.course }}</p>
+        <p>{{ a.status }}</p>
+      </div>
+    {% endfor %}
+    {% else %}
+      <p id="applications_none">{{ ui.applications_none }}</p>
+    {% endif %}
+  </section>
+  <p id="manage_applications">
+    <a href="/o/{{ center.slug }}/center/applications/manage/" data-kind="applications_manage">{{ ui.applications_manage_heading }}</a>
+  </p>
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends "center/base.html" %}
+{# The page raw scores are recorded and corrected on (GRD-003/GRD-006): one action here, and the form is on this page, so a refused attempt leaves the person on this page with the rows they typed marked (RULE 6.3). #}
+{% block content %}
+  <section id="grading_results_manage">
+    <p>{{ ui.grading_results_manage_heading }}</p>
+    <dl>
+      {% for f in fields %}
+        <div id="{{ f.id }}"><dt>{{ f.title }}</dt><dd>{{ f.value }}</dd></div>
+        {% if f.problem %}<p id="{{ f.id }}_problem">{{ f.problem }}</p>{% endif %}
+      {% endfor %}
+    </dl>
+  </section>
+  <p id="list_results">
+    <a href="/o/{{ center.slug }}/center/grading/results/" data-kind="results">{{ ui.grading_results_heading }}</a>
+  </p>
+{% endblock %}

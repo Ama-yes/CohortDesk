@@ -1,0 +1,47 @@
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Local development database
+*.sqlite3
+.local/
+
+# Django collect-static output and media uploads
+staticfiles-output/
+*.key
+*.pem
+*.ppk
+*.p12
+*.pfx
+id_rsa
+id_ed25519*
+
+# Node (CSS build when enabled)
+node_modules/
+package-lock.json
+
+# Editor / OS
+.idea/
+.vscode/
+*.swp
+Thumbs.db
+.DS_Store
+
+# Test and build artifacts
+coverage/
+*.log
+backups/
+
+# Browser verification artifacts: Playwright CLI snapshots and session data.
+# They are local evidence, not part of the product.
+.playwright-cli/
+/*.yml
+
+# Hermes tooling metadata
+.hermes/

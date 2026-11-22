@@ -1,0 +1,24 @@
+{% extends "center/base.html" %}
+{# The staff and instructors of this centre (STAFF-001/STAFF-002). Archived records are listed too: a staff record that history references is archived, never deleted. Nothing here reads another centre (RULE 6.1). #}
+{% block content %}
+  <section id="staff">
+    <p>{{ ui.staff_heading }}</p>
+    {% if query %}<p id="staff_query">{{ query }}</p>{% endif %}
+    {% if staff %}
+    {% for s in staff %}
+      <div id="staff-{{ s.number }}">
+        <p>{{ s.number }}</p>
+        <p>{{ s.name }}</p>
+        <p>{{ s.job_title }}</p>
+        <p>{{ s.status }}</p>
+        <a href="/o/{{ center.slug }}/center/staff/{{ s.number }}/" data-kind="staff_member">{{ s.number }}</a>
+      </div>
+    {% endfor %}
+    {% else %}
+      <p id="staff_none">{{ ui.staff_none }}</p>
+    {% endif %}
+  </section>
+  <p id="manage_staff">
+    <a href="/o/{{ center.slug }}/center/staff/manage/" data-kind="staff_manage">{{ ui.staff_manage_heading }}</a>
+  </p>
+{% endblock %}

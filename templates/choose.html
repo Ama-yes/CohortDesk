@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{# The account's own pages are not part of any tenant centre (RULE 6.1, AUTH-002). #}
+{% block title %}{{ ui.choose_center }}{% endblock %}
+{% block content %}
+  <div id="home">
+    <p>{{ ui.your_centers }}</p>
+    <p id="current_center">{{ working_center }}</p>
+    {% if working_slug %}<p id="enter_center"><a href="/o/{{ working_slug }}/center/dashboard/" data-kind="dashboard">{{ ui.dashboard }}</a></p>{% endif %}
+  </div>
+{% endblock %}
+{% block form %}
+  <form id="switch" method="post" action="/accounts/choose/">
+    <label for="/accounts/choose/.center">{{ ui.your_centers }}</label>
+    {% if centers %}
+      <select name="center" id="/accounts/choose/.center">
+        {% for c in centers %}<option value="{{ c.slug }}"{% if c.slug == working_slug %} selected{% endif %}>{{ c.name }}</option>
+        {% endfor %}
+      </select>
+    {% else %}
+      <p id="choose_none">{{ ui.choose_none }}</p>
+    {% endif %}
+    {% csrf_token %}
+    <button type="submit">{{ ui.choose_center }}</button>
+  </form>
+{% endblock %}

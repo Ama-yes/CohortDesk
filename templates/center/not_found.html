@@ -1,0 +1,10 @@
+{% extends "center/base.html" %}
+{# A number this centre has no record for, asked at this centre (STU-002/COH-003). The answer is only about this centre: the page never says whether that number names a record at another centre, because this page can read nothing about another centre (RULE 6.1). The message and the way back are the caller's, so one page serves every record kind. #}
+{% block content %}
+  <section id="not_found">
+    <p id="not_found_record">{{ message }}</p>
+  </section>
+  <p id="list_{{ back.kind }}">
+    <a href="{{ back.href }}" data-kind="{{ back.kind }}">{{ back.title }}</a>
+  </p>
+{% endblock %}

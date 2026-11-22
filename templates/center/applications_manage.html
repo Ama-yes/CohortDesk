@@ -1,0 +1,16 @@
+{% extends "center/base.html" %}
+{# The page applications are recorded, reviewed, accepted, or converted on (ADM-001..ADM-008). One action here. The form is on this page, and after the attempt the person stays on this page and sees what was not accepted and why (RULE 6.3). #}
+{% block content %}
+  <section id="applications_manage">
+    <p>{{ ui.applications_manage_heading }}</p>
+    <dl>
+      {% for f in fields %}
+        <div id="{{ f.id }}"><dt>{{ f.title }}</dt><dd>{{ f.value }}</dd></div>
+        {% if f.problem %}<p id="{{ f.id }}_problem">{{ f.problem }}</p>{% endif %}
+      {% endfor %}
+    </dl>
+  </section>
+  <p id="list_applications">
+    <a href="/o/{{ center.slug }}/center/applications/" data-kind="applications">{{ ui.applications_heading }}</a>
+  </p>
+{% endblock %}

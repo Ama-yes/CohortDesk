@@ -1,0 +1,84 @@
+{% extends "center/base.html" %}
+{# The centre's attendance register (ATT-001/ATT-004/ATT-006/ATT-009). An instructor sees the records of the sessions of the cohorts they teach, and nothing else; the scope is decided on the server, never from the address typed. The figures answer over exactly the rows shown. #}
+{% block content %}
+  <section id="attendance">
+    <p>{{ ui.attendance_heading }}</p>
+    {% if attendance %}
+    {% for a in attendance %}
+      <div id="attendance-{{ a.session_number }}-{{ a.student_number }}">
+        <dl>
+          <div><dt>{{ ui.sessions_number }}</dt><dd>{{ a.session_number }}</dd></div>
+          <div><dt>{{ ui.sessions_start }}</dt><dd>{{ a.session_start }}</dd></div>
+          <div><dt>{{ ui.sessions_cohort }}</dt><dd>{{ a.cohort }}</dd></div>
+          <div><dt>{{ ui.sessions_course }}</dt><dd>{{ a.course }}</dd></div>
+          <div><dt>{{ ui.field_student_number }}</dt><dd>{{ a.student_number }}</dd></div>
+          <div><dt>{{ ui.field_name }}</dt><dd>{{ a.name }}</dd></div>
+          <div><dt>{{ ui.attendance_status }}</dt><dd>{{ a.status }}</dd></div>
+          <div><dt>{{ ui.attendance_recorded_at }}</dt><dd>{{ a.recorded }}</dd></div>
+          <div><dt>{{ ui.attendance_status_changed }}</dt><dd>{{ a.changed }}</dd></div>
+          <div><dt>{{ ui.attendance_history_note }}</dt><dd>{{ a.note }}</dd></div>
+        </dl>
+      </div>
+    {% endfor %}
+    {% else %}
+      <p id="attendance_none">{{ ui.attendance_none }}</p>
+    {% endif %}
+  </section>
+  <section id="attendance_register">
+    <p>{{ ui.attendance_register_heading }}</p>
+    {% if sessions %}
+    {% for s in sessions %}
+      <div id="attendance-session-{{ s.number }}">
+        <dl>
+          <div><dt>{{ ui.sessions_number }}</dt><dd>{{ s.number }}</dd></div>
+          <div><dt>{{ ui.sessions_start }}</dt><dd>{{ s.start }}</dd></div>
+          <div><dt>{{ ui.sessions_end }}</dt><dd>{{ s.end }}</dd></div>
+          <div><dt>{{ ui.sessions_cohort }}</dt><dd>{{ s.cohort }}</dd></div>
+          <div><dt>{{ ui.field_cohort_number }}</dt><dd>{{ s.cohort_number }}</dd></div>
+          <div><dt>{{ ui.sessions_course }}</dt><dd>{{ s.course }}</dd></div>
+          <div><dt>{{ ui.sessions_note }}</dt><dd>{{ s.note }}</dd></div>
+          <div id="attendance-session-present-{{ s.number }}"><dt>{{ ui.attendance_register_present }}</dt><dd>{{ s.present }}</dd></div>
+          <div id="attendance-session-absent-{{ s.number }}"><dt>{{ ui.attendance_register_absent }}</dt><dd>{{ s.absent }}</dd></div>
+          <div id="attendance-session-late-{{ s.number }}"><dt>{{ ui.attendance_register_late }}</dt><dd>{{ s.late }}</dd></div>
+          <div id="attendance-session-excused-{{ s.number }}"><dt>{{ ui.attendance_register_excused }}</dt><dd>{{ s.excused }}</dd></div>
+          <div><dt>{{ ui.attendance_register_records }}</dt><dd>{{ s.records }}</dd></div>
+        </dl>
+        <a href="/o/{{ center.slug }}/center/attendance/{{ s.number }}/" data-kind="attendance_session">{{ s.number }}</a>
+        <a href="/o/{{ center.slug }}/center/attendance/{{ s.number }}/register.csv" data-kind="attendance_register_csv">{{ ui.attendance_register_csv }}</a>
+      </div>
+    {% endfor %}
+    {% else %}
+      <p id="attendance_register_none">{{ ui.sessions_none }}</p>
+    {% endif %}
+  </section>
+  <section id="attendance_totals">
+    <dl>
+      {% for t in attendance_totals %}<div id="{{ t.id }}"><dt>{{ t.title }}</dt><dd>{{ t.value }}</dd></div>
+      {% endfor %}
+    </dl>
+  </section>
+  <section id="attendance_corrections">
+    <p>{{ ui.attendance_history_corrections }}</p>
+    {% if audit %}
+    {% for c in audit %}
+      <div id="attendance-correction-{{ c.session_number }}-{{ c.student_number }}-{{ c.at }}">
+        <dl>
+          <div><dt>{{ ui.attendance_history_session }}</dt><dd>{{ c.session_number }}</dd></div>
+          <div><dt>{{ ui.sessions_cohort }}</dt><dd>{{ c.cohort }}</dd></div>
+          <div><dt>{{ ui.field_student_number }}</dt><dd>{{ c.student_number }}</dd></div>
+          <div><dt>{{ ui.field_name }}</dt><dd>{{ c.name }}</dd></div>
+          <div><dt>{{ ui.attendance_history_correction_from }}</dt><dd>{{ c.previous }}</dd></div>
+          <div><dt>{{ ui.attendance_history_correction_to }}</dt><dd>{{ c.new }}</dd></div>
+          <div><dt>{{ ui.attendance_history_correction_actor }}</dt><dd>{{ c.actor }}</dd></div>
+          <div><dt>{{ ui.attendance_history_correction_at }}</dt><dd>{{ c.at }}</dd></div>
+        </dl>
+      </div>
+    {% endfor %}
+    {% else %}
+      <p id="attendance_corrections_none">{{ ui.attendance_history_corrections_none }}</p>
+    {% endif %}
+  </section>
+  <p id="manage_attendance">
+    <a href="/o/{{ center.slug }}/center/attendance/manage/" data-kind="attendance_manage">{{ ui.attendance_manage_heading }}</a>
+  </p>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends "center/base.html" %}
+{# One program of this centre, in full, with the courses that belong to it (ACAD-004). A part with nothing recorded says so rather than showing an empty value. This page answers only about this centre's own record (RULE 6.1). #}
+{% block content %}
+  <section id="program-{{ number }}">
+    <dl>
+      {% for p in profile %}<div id="{{ p.id }}"><dt>{{ p.title }}</dt><dd>{{ p.value }}</dd></div>
+      {% endfor %}
+    </dl>
+  </section>
+  <section id="program_courses">
+    <p>{{ ui.program_courses_heading }}</p>
+    {% if courses %}
+    {% for c in courses %}
+      <div id="program_course-{{ c.number }}">
+        <p>{{ c.number }}</p>
+        <p>{{ c.title }}</p>
+        <a href="/o/{{ center.slug }}/center/courses/{{ c.number }}/" data-kind="course">{{ c.number }}</a>
+      </div>
+    {% endfor %}
+    {% else %}
+      <p id="program_no_courses">{{ ui.program_no_courses }}</p>
+    {% endif %}
+  </section>
+  <p id="manage_programs">
+    <a href="/o/{{ center.slug }}/center/programs/manage/" data-kind="programs_manage">{{ ui.programs_manage_heading }}</a>
+  </p>
+{% endblock %}

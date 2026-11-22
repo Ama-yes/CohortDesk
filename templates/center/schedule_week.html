@@ -1,0 +1,31 @@
+{% extends "center/base.html" %}
+{# One Monday-to-Sunday week of the centre's timetable (SCH-007). Every row is this centre's own session, shown in its own timezone (SCH-009); warnings are derived from the current timetable, so they are never stored. Nothing here reads another centre (RULE 6.1). #}
+{% block content %}
+  <section id="schedule_week">
+    <p>{{ ui.schedule_week_heading }}</p>
+    <p id="schedule_week_start">{{ start }}</p>
+    <p id="schedule_week_end">{{ end }}</p>
+    <p id="schedule_week_previous"><a href="/o/{{ center.slug }}/center/schedule/week/?date={{ previous }}" data-kind="schedule.week">{{ ui.schedule_previous }}</a></p>
+    <p id="schedule_week_next"><a href="/o/{{ center.slug }}/center/schedule/week/?date={{ next }}" data-kind="schedule.week">{{ ui.schedule_next }}</a></p>
+    <p id="schedule_week_day"><a href="/o/{{ center.slug }}/center/schedule/day/?date={{ start }}" data-kind="schedule.day">{{ ui.schedule_day_heading }}</a></p>
+    {% if sessions %}
+    {% for s in sessions %}
+      <div id="session-{{ s.number }}">
+        <p>{{ s.number }}</p>
+        <p>{{ s.cohort }}</p>
+        <p>{{ s.course }}</p>
+        <p>{{ s.start }}</p>
+        <p>{{ s.end }}</p>
+        <p>{{ s.room }}</p>
+        <p id="schedule_status-{{ s.number }}">{{ s.status }}</p>
+        {% for w in s.warnings %}<p id="schedule_warning-{{ s.number }}-{{ w.kind }}">{{ w.text }}</p>{% endfor %}
+      </div>
+    {% endfor %}
+    {% else %}
+      <p id="schedule_week_none">{{ ui.schedule_none }}</p>
+    {% endif %}
+  </section>
+  <p id="list_sessions">
+    <a href="/o/{{ center.slug }}/center/sessions/" data-kind="sessions">{{ ui.sessions_heading }}</a>
+  </p>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "center/base.html" %}
+{# The page a tenant centre's cohorts are listed on (COH-001). Every status is listed: a cohort is never lost, only completed or cancelled (COH-007). Nothing here reads another centre (RULE 6.1). #}
+{% block content %}
+  <section id="cohorts">
+    <p>{{ ui.cohorts_heading }}</p>
+    {% if cohorts %}
+    {% for c in cohorts %}
+      <div id="cohort-{{ c.number }}">
+        <p>{{ c.number }}</p>
+        <p>{{ c.name }}</p>
+        <p>{{ c.course }}</p>
+        <p>{{ c.start_date }}</p>
+        <p>{{ c.end_date }}</p>
+        <p>{{ c.capacity }}</p>
+        <p>{{ c.status }}</p>
+        <a href="/o/{{ center.slug }}/center/cohorts/{{ c.number }}/" data-kind="cohort">{{ c.number }}</a>
+      </div>
+    {% endfor %}
+    {% else %}
+      <p id="cohorts_none">{{ ui.cohorts_none }}</p>
+    {% endif %}
+  </section>
+  <p id="manage_cohorts">
+    <a href="/o/{{ center.slug }}/center/cohorts/manage/" data-kind="cohorts_manage">{{ ui.cohorts_manage_heading }}</a>
+  </p>
+{% endblock %}

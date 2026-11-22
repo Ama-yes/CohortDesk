@@ -1,0 +1,656 @@
+/*
+ The one stylesheet for the whole app: surfaces, ink, lines, rounding, and the
+ small line icons that ride the navigation chips. The icons are one family of
+ 16-wide, 1.4-weight round-capped line marks, kept as data URIs. Nothing here
+ reads a language or a direction: every offset is a logical property, so a
+ page that reads right to left mirrors itself on its own.
+*/
+
+:root {
+  /* surfaces and ink */
+  --bg: #f3f0e9;
+  --surface: #fffefb;
+  --chip: #f1ede3;
+  --chip-deep: #e8e2d3;
+  --ink: #21252c;
+  --ink-soft: #565e66;
+  --ink-faint: #8b8d84;
+  --line: #e3dfd3;
+  --line-strong: #d0cabc;
+  --accent: #2d5450;
+  --accent-ink: #1f4441;
+  --accent-soft: #e7efeb;
+  --bad: #a03a2c;
+  --bad-soft: #f8e9e4;
+  --ok: #2f6b46;
+  --late: #8a6223;
+
+  /* the marks used by the icons live in the same family as the ink */
+  --mark: #676e76;
+}
+
+body {
+  font-family: system-ui, "Segoe UI", "Noto Sans", "Noto Naskh Arabic", sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+  max-width: 1240px;
+  margin-inline: auto;
+  padding: 16px 22px 26px;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* --- the shell: who you are, what just happened, where you may go --- */
+
+header[id="brand"] {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  padding: 8px 14px;
+  margin: 0 0 12px;
+  background: var(--surface);
+  box-shadow: 0 1px 2px rgba(33,37,44,0.05);
+}
+
+header[id="brand"] img {
+  width: 26px;
+  height: 26px;
+}
+
+header[id="brand"] p {
+  font-weight: 660;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+}
+
+header[id="brand"] a {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+header[id="brand"] a[id="sign_out"] {
+  margin-inline-start: auto;
+  padding: 3px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--chip);
+  font-size: 12px;
+  font-weight: 560;
+  color: var(--ink-soft);
+}
+
+header[id="brand"] a[id="sign_out"]:hover {
+  background: var(--chip-deep);
+}
+
+/* what just happened, kept on the page the person is on */
+section[id="note"] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  border: 1px solid var(--line-strong);
+  border-inline-start: 3px solid var(--accent);
+  border-radius: 10px;
+  padding: 7px 12px;
+  margin: 10px 0 12px;
+  background: var(--surface);
+}
+
+section[id="note"] p:first-of-type {
+  font-size: 11px;
+  font-weight: 620;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  padding: 1px 9px;
+  background: var(--chip-deep);
+  color: var(--ink-soft);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+section[id="note"] p:nth-of-type(2) {
+  color: var(--ink);
+  margin: 0;
+}
+
+section[id="note"][data-kind="bad"] p:first-of-type {
+  background: var(--bad-soft);
+  border-color: var(--bad);
+  color: var(--bad);
+}
+
+nav[id="bar"] {
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  padding: 7px 12px;
+  margin: 12px 0;
+  background: var(--surface);
+  box-shadow: 0 1px 2px rgba(33,37,44,0.05);
+}
+
+nav[id="bar"] p {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px 5px;
+  margin: 0;
+}
+
+nav[id="bar"] a {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 2px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 580;
+  color: var(--ink-soft);
+  background: var(--chip);
+  text-decoration: none;
+}
+
+nav[id="bar"] a:hover {
+  background: var(--chip-deep);
+  color: var(--ink);
+}
+
+nav[id="bar"] a:has(:not(a)) {
+  color: var(--ink);
+}
+
+/* every standalone link is a chip with its mark riding in front of it */
+nav[id="bar"] a::before,
+#page p > a::before,
+#page div[id] a::before {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 16 16'%3E%3Cg fill='none' stroke='%23676e76' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='8' cy='8' r='2.4'/%3E%3C/g%3E%3C/svg%3E");
+  margin-inline-end: 7px;
+}
+
+/* --- the page itself --- */
+
+section[id="page"] {
+  margin: 0;
+  width: auto;
+}
+
+/* the title of each block: the paragraph whose id ends in heading */
+#page p[id$="_heading"],
+#page section[id] > p:first-of-type:not([id]) {
+  font-size: 15px;
+  font-weight: 660;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+  margin: 0 0 9px;
+}
+
+/* a line of plain words under a title: a hint, not a record */
+#page section[id] > p:not([id]):nth-of-type(2) {
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  margin: 0 0 8px;
+}
+
+/* records: lines of words, first line the lead */
+#page div[id] > p {
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  margin: 0;
+}
+
+#page div[id] > p:first-of-type,
+#page div[id] > p:first-of-type[id] {
+  font-size: 13.5px;
+  font-weight: 620;
+  color: var(--ink);
+  margin: 0 0 3px;
+}
+
+#page div[id] > p[id] {
+  font-size: 12px;
+  margin: 0 0 4px;
+}
+
+/* figures: a term, then its value, kept in a line together */
+dl > div {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0 10px;
+  margin: 0;
+  width: auto;
+}
+
+dl dt {
+  font-size: 11px;
+  font-weight: 560;
+  letter-spacing: 0.02em;
+  color: var(--ink-soft);
+  margin-inline-end: 6px;
+}
+
+dl dd {
+  font-size: 13px;
+  font-weight: 560;
+  color: var(--ink);
+  width: auto;
+}
+
+/* an empty thing says so, in its own quiet voice */
+#page p[id$="_none"],
+#page p[id$="_empty"] {
+  font-size: 12.5px;
+  font-style: italic;
+  color: var(--ink-faint);
+  margin: 6px 0;
+}
+
+/* what was not accepted, and why */
+#page p[id$="_problem"] {
+  font-size: 12px;
+  font-weight: 620;
+  color: var(--bad);
+  margin: 3px 0 5px;
+}
+
+#page p[id$="_problem"]::before {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 16 16'%3E%3Cg fill='none' stroke='%23a03a2c' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 2.8L12.6 11.6H3.4z'/%3E%3Cpath d='M8 6.4v2.6'/%3E%3Cpath d='M8 10.4l0.1 0.1'/%3E%3C/g%3E%3C/svg%3E");
+  margin-inline-end: 6px;
+}
+
+/* blocks: a record reads as one card, an action page as one field */
+#page div[id],
+#page form {
+  width: auto;
+}
+
+#page section[id] > div[id],
+#page section[id] > section > div[id],
+#page div[id="home"] {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 3px 12px;
+  vertical-align: top;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  padding: 9px 14px;
+  margin: 2px 12px 12px 2px;
+  background: var(--surface);
+  box-shadow: 0 1px 2px rgba(33,37,44,0.05);
+}
+
+/* the page's own opening block */
+#page div[id="home"] {
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin: 0 0 12px;
+  background: var(--surface);
+}
+
+#page div[id="home"] p[id="center_name"] {
+  font-size: 18px;
+  font-weight: 680;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+  margin: 0 0 4px;
+}
+
+#page div[id="home"] p[id="center_address"],
+#page div[id="home"] p[id="my_role"],
+#page div[id="home"] p[id="viewing"] {
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  margin: 0 0 5px;
+}
+
+#page div[id="home"] p[id="denied"],
+#page p[id="denied"] {
+  font-weight: 580;
+  color: var(--ink);
+  margin: 0 0 8px;
+}
+
+#page div[id="home"] p[id="current_center"] {
+  font-size: 13px;
+  font-weight: 580;
+  color: var(--ink-soft);
+  margin: 0 0 4px;
+}
+
+#page div[id="home"] p[id="enter_center"] {
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin: 0 0 6px;
+}
+
+/* figures that belong to a whole page read as one quiet panel */
+#page dl[id$="_summary"],
+#page dl[id$="_totals"],
+#page dl[id$="_period"],
+#page dl[id="receipt_figures"],
+#page dl[id="settings"] {
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  padding: 8px 13px;
+  margin: 6px 0 12px;
+  background: var(--chip);
+}
+
+/* a timetable state and a warning keep their own lines */
+#page p[id$="_start"],
+#page p[id$="_end"],
+#page p[id="schedule_day_date"],
+#page p[id="attendance_period_date"],
+#page p[id="attendance_period_start"],
+#page p[id="attendance_period_end"] {
+  font-size: 12.5px;
+  font-weight: 560;
+  color: var(--ink-soft);
+  margin: 0 0 4px;
+}
+
+#page div[id] p[id^="schedule_status"] {
+  font-size: 12px;
+  font-weight: 620;
+  color: var(--ink-soft);
+  background: var(--chip-deep);
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  padding: 1px 10px;
+  margin-inline-start: 8px;
+}
+
+#page div[id] p[id^="schedule_warning"] {
+  font-size: 12px;
+  font-weight: 560;
+  color: var(--late);
+  border-inline-start: 2px solid var(--late);
+  border-radius: 2px;
+  padding-inline-start: 6px;
+  margin: 0;
+}
+
+/* attendance states, marked where the page counts them */
+#page div[id] dl > div[id] {
+  margin: 0;
+}
+
+#page dl > div[id^="attendance-session-present"]::before,
+#page dl > div[id^="attendance-session-absent"]::before,
+#page dl > div[id^="attendance-session-late"]::before,
+#page dl > div[id^="attendance-session-excused"]::before {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  margin-inline-end: 8px;
+  margin-inline-start: 0;
+  vertical-align: middle;
+}
+
+#page dl > div[id^="attendance-session-present"]::before {
+  background: var(--ok);
+  border-color: var(--ok);
+}
+
+#page dl > div[id^="attendance-session-absent"]::before {
+  background: var(--bad-soft);
+  border-color: var(--bad);
+}
+
+#page dl > div[id^="attendance-session-late"]::before {
+  background: var(--late);
+  border-color: var(--late);
+}
+
+#page dl > div[id^="attendance-session-excused"]::before {
+  background: var(--chip-deep);
+}
+
+/* the chips that carry a page's links */
+#page p > a,
+#page div[id] a {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 12px;
+  font-weight: 560;
+  color: var(--ink-soft);
+  background: var(--chip);
+  text-decoration: none;
+}
+
+#page p > a:hover,
+#page div[id] a:hover {
+  background: var(--chip-deep);
+  color: var(--ink);
+}
+
+/* a page's short cuts read as one wrapping menu of chips */
+#page p[id$="_link"] {
+  display: inline-block;
+  vertical-align: top;
+  margin: 2px 6px 2px 0;
+}
+
+/* --- the marks: one line family, one weight, one corner --- */
+
+nav[id="bar"] a[data-kind$="_manage"]::before,
+#page p > a[data-kind$="_manage"]::before {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 16 16'%3E%3Cg fill='none' stroke='%23676e76' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4.4 11.6L11.6 4.4'/%3E%3Cpath d='M10.4 3.2L12.8 5.6'/%3E%3Cpath d='M3.2 10.4L5.6 12.8'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+nav[id="bar"] a[data-kind="students"]::before,
+nav[id="bar"] a[data-kind="cohorts"]::before {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 16 16'%3E%3Cg fill='none' stroke='%23676e76' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='5.8' cy='5.4' r='2.2'/%3E%3Cpath d='M2.6 12.6a3.6 3.6 0 0 1 7.2 0'/%3E%3Ccircle cx='11' cy='6.4' r='1.9'/%3E%3Cpath d='M8.4 12.6a3.2 3.2 0 0 1 6.4 0'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+nav[id="bar"] a[data-kind="staff"]::before,
+nav[id="bar"] a[data-kind="staff.self"]::before,
+#page div[id] a[data-kind="student"]::before {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 16 16'%3E%3Cg fill='none' stroke='%23676e76' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='8' cy='5.4' r='2.6'/%3E%3Cpath d='M3.6 13a4.4 4.4 0 0 1 8.8 0'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+nav[id="bar"] a[data-kind="admin"]::before {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 16 16'%3E%3Cg fill='none' stroke='%23676e76' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 2.8L12.4 4.6v3.6L8 13.2L3.6 8.2V4.6z'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+nav[id="bar"] a[data-kind="courses"]::before,
+#page div[id] a[data-kind="course"]::before {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 16 16'%3E%3Cg fill='none' stroke='%23676e76' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3.4' y='3' width='9.2' height='10' rx='1.2'/%3E%3Cpath d='M6.4 3v10'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+nav[id="bar"] a[data-kind="applications"]::before {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 16 16'%3E%3Cg fill='none' stroke='%23676e76' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3.4' y='2.6' width='9.2' height='10.8' rx='1.2'/%3E%3Cpath d='M6 6.2h4.4M6 9h4.4'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+nav[id="bar"] a[data-kind="programs"]::before {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 16 16'%3E%3Cg fill='none' stroke='%23676e76' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2.6' y='2.8' width='10.8' height='4' rx='1'/%3E%3Crect x='2.6' y='9.2' width='10.8' height='4' rx='1'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+nav[id="bar"] a[data-kind="enrollments"]::before {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 16 16'%3E%3Cg fill='none' stroke='%23676e76' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='6.4' cy='5.8' r='2.4'/%3E%3Cpath d='M2.8 12.8a3.6 3.6 0 0 1 7.2 0'/%3E%3Cpath d='M12.6 7.4v4.8M10.2 9.8h4.8'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+nav[id="bar"] a[data-kind="sessions"]::before {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 16 16'%3E%3Cg fill='none' stroke='%23676e76' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='8' cy='8' r='5'/%3E%3Cpath d='M8 8V4.6M8 8l3.4 1.6'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+nav[id="bar"] a[data-kind="schedule.day"]::before,
+nav[id="bar"] a[data-kind="schedule.week"]::before {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 16 16'%3E%3Cg fill='none' stroke='%23676e76' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2.6' y='3.4' width='10.8' height='9.6' rx='1'/%3E%3Cpath d='M2.6 6.4h10.8M5.6 2.2V4.6M10.4 2.2V4.6'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+nav[id="bar"] a[data-kind="rooms"]::before {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 16 16'%3E%3Cg fill='none' stroke='%23676e76' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='4' y='2.6' width='8' height='10.8' rx='1'/%3E%3Cpath d='M10.6 6.8v2.4'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+nav[id="bar"] a[data-kind="attendance"]::before {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 16 16'%3E%3Cg fill='none' stroke='%23676e76' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3.4' y='3' width='9.2' height='10.4' rx='1'/%3E%3Cpath d='M5.4 7.6l2 2l4.2-4.2'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+nav[id="bar"] a[data-kind="periods"]::before {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 16 16'%3E%3Cg fill='none' stroke='%23676e76' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4.6 2.8h6.8M4.6 13.2h6.8'/%3E%3Cpath d='M5.8 2.8L8 7.8L10.4 2.8M5.8 13.2L8 8.2L10.4 13.2'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+nav[id="bar"] a[data-kind="reports"]::before {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 16 16'%3E%3Cg fill='none' stroke='%23676e76' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.8 13.2h10.4'/%3E%3Cpath d='M5.4 13.2V9.2M8 13.2V6.4M11 13.2V4'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+nav[id="bar"] a[data-kind="finances"]::before {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 16 16'%3E%3Cg fill='none' stroke='%23676e76' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='8' cy='8' r='5.2'/%3E%3Cpath d='M5.6 6.4h4.8M5.6 9.6h4.8'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+nav[id="bar"] a[data-kind="grading"]::before {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 16 16'%3E%3Cg fill='none' stroke='%23676e76' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='8' cy='6' r='3.4'/%3E%3Cpath d='M6.4 8.8L5.2 13.2M9.6 8.8L10.8 13.2'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+nav[id="bar"] a[data-kind="accounts.choose"]::before {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 16 16'%3E%3Cg fill='none' stroke='%23676e76' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.4 6.4h9.2'/%3E%3Cpath d='M10.6 4.4l2 2l-2 2'/%3E%3Cpath d='M3.4 10.6h9.2'/%3E%3Cpath d='M5.4 8.6l-2 2l2 2'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+nav[id="bar"] a[data-kind="accounts.sign-in"]::before {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 16 16'%3E%3Cg fill='none' stroke='%23676e76' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12.6 3v10'/%3E%3Cpath d='M3.4 8h6.8'/%3E%3Cpath d='M8.4 5.6l2.4 2.4l-2.4 2.4'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+nav[id="bar"] a[data-kind="settings"]::before {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 16 16'%3E%3Cg fill='none' stroke='%23676e76' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 5.4h10M3 10.6h10'/%3E%3Ccircle cx='6.2' cy='5.4' r='1.8' fill='%23676e76' stroke='none'/%3E%3Ccircle cx='10' cy='10.6' r='1.8' fill='%23676e76' stroke='none'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+#page p[id$="_csv"] > a::before {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 16 16'%3E%3Cg fill='none' stroke='%23676e76' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 2.6V7.8'/%3E%3Cpath d='M5 5.6L8 8.6L11 5.6'/%3E%3Cpath d='M4 9.8V12.6h8V9.8'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* figures kept beside a whole record: the period panel too */
+#page dl[id$="_period"] {
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  padding: 8px 13px;
+  margin: 6px 0 12px;
+  background: var(--surface);
+}
+
+/* --- forms: the line a person answers from --- */
+
+form {
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  padding: 11px 15px;
+  margin: 12px 0 0;
+  background: var(--surface);
+  box-shadow: 0 1px 2px rgba(33,37,44,0.05);
+}
+
+form label {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 620;
+  letter-spacing: 0.02em;
+  color: var(--ink-soft);
+  margin: 0 0 3px;
+}
+
+form select,
+form input[type="text"],
+form input[type="number"],
+form input[type="email"],
+form input[type="url"],
+form input[type="date"],
+form input[type="password"] {
+  display: block;
+  font: inherit;
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  padding: 3px 10px;
+  margin: 0 0 10px;
+  min-width: 130px;
+}
+
+form select option {
+  font-size: 12.5px;
+  padding: 2px 8px;
+}
+
+form button {
+  display: inline-block;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 620;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+  background: var(--chip-deep);
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  padding: 3px 14px;
+  margin: 2px 0 0;
+  cursor: pointer;
+  width: auto;
+}
+
+form button:hover {
+  background: var(--line);
+}
+
+/* --- narrow screens: same page, tighter rhythm --- */
+
+@media (max-width: 560px) {
+  body {
+    padding: 12px 14px 22px;
+    font-size: 13.5px;
+  }
+
+  header[id="brand"] {
+    padding: 6px 11px;
+    gap: 2px 10px;
+  }
+
+  nav[id="bar"] {
+    padding: 8px 10px;
+    margin: 10px 0;
+  }
+
+  nav[id="bar"] p {
+    gap: 4px 6px;
+  }
+
+  nav[id="bar"] a {
+    padding: 3px 10px;
+    font-size: 12.5px;
+  }
+
+  #page p > a,
+  #page div[id] a {
+    padding: 3px 10px;
+  }
+
+  #page div[id],
+  #page section[id] > div[id],
+  #page section[id] > section > div[id],
+  #page div[id="home"] {
+    padding: 9px 12px;
+  }
+
+  form {
+    padding: 10px 12px;
+  }
+}

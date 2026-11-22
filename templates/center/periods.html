@@ -1,0 +1,23 @@
+{% extends "center/base.html" %}
+{# The page a tenant centre's academic periods are listed on (ACAD-006). Nothing here reads another centre (RULE 6.1). #}
+{% block content %}
+  <section id="periods">
+    <p>{{ ui.periods_heading }}</p>
+    {% if periods %}
+    {% for p in periods %}
+      <div id="period-{{ p.number }}">
+        <p>{{ p.number }}</p>
+        <p>{{ p.name }}</p>
+        <p>{{ p.start_date }}</p>
+        <p>{{ p.end_date }}</p>
+        <a href="/o/{{ center.slug }}/center/periods/{{ p.number }}/" data-kind="period">{{ p.number }}</a>
+      </div>
+    {% endfor %}
+    {% else %}
+      <p id="periods_none">{{ ui.periods_none }}</p>
+    {% endif %}
+  </section>
+  <p id="manage_periods">
+    <a href="/o/{{ center.slug }}/center/periods/manage/" data-kind="periods_manage">{{ ui.periods_manage_heading }}</a>
+  </p>
+{% endblock %}

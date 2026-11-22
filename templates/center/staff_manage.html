@@ -1,0 +1,17 @@
+{% extends "center/base.html" %}
+{# The page staff records are made, changed, statused, and assigned on (STAFF-001..STAFF-003). One action here. The form is on this page, and after the attempt the person stays on this page and sees what was not accepted and why (RULE 6.3). A staff record is independent of a login (STAFF-006). #}
+{% block content %}
+  <section id="staff_manage">
+    <p>{{ ui.staff_manage_heading }}</p>
+    <p id="staff_manage_hint">{{ ui.staff_manage_hint }}</p>
+    <dl>
+      {% for f in fields %}
+        <div id="{{ f.id }}"><dt>{{ f.title }}</dt><dd>{{ f.value }}</dd></div>
+        {% if f.problem %}<p id="{{ f.id }}_problem">{{ f.problem }}</p>{% endif %}
+      {% endfor %}
+    </dl>
+  </section>
+  <p id="list_staff">
+    <a href="/o/{{ center.slug }}/center/staff/" data-kind="staff">{{ ui.staff_heading }}</a>
+  </p>
+{% endblock %}

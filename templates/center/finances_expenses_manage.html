@@ -1,0 +1,16 @@
+{% extends "center/base.html" %}
+{# The page expenses are recorded and withdrawn on (FIN-013). One action here. The form is on this page, and after the attempt the person stays on this page and sees what was not accepted and why (RULE 6.3). #}
+{% block content %}
+  <section id="finances_expenses_manage">
+    <p>{{ ui.expenses_manage_heading }}</p>
+    <dl>
+      {% for f in fields %}
+        <div id="{{ f.id }}"><dt>{{ f.title }}</dt><dd>{{ f.value }}</dd></div>
+        {% if f.problem %}<p id="{{ f.id }}_problem">{{ f.problem }}</p>{% endif %}
+      {% endfor %}
+    </dl>
+  </section>
+  <p id="list_expenses">
+    <a href="/o/{{ center.slug }}/center/finances/expenses/" data-kind="expenses">{{ ui.expenses_heading }}</a>
+  </p>
+{% endblock %}

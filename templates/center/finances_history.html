@@ -1,0 +1,30 @@
+{% extends "center/base.html" %}
+{# Every payment posted and every adjustment recorded at this centre, one after the other (FIN-010). Nothing here reads another centre (RULE 6.1). #}
+{% block content %}
+  <section id="finances_history">
+    <p>{{ ui.history_heading }}</p>
+    <p>{{ ui.history_hint }}</p>
+    {% if rows %}
+    {% for r in rows %}
+      <div id="history-{{ r.id }}">
+        <dl>
+          <div><dt>{{ ui.history_row_number }}</dt><dd>{{ r.id }}</dd></div>
+          <div><dt>{{ ui.history_row_moment }}</dt><dd>{{ r.moment }}</dd></div>
+          <div><dt>{{ ui.history_row_kind }}</dt><dd>{{ r.kind }}</dd></div>
+          <div><dt>{{ ui.history_row_agreement }}</dt><dd>{{ r.agreement }}</dd></div>
+          <div><dt>{{ ui.history_row_code }}</dt><dd>{{ r.code }}</dd></div>
+          <div><dt>{{ ui.history_row_amount }}</dt><dd>{{ r.amount }}</dd></div>
+          <div><dt>{{ ui.history_row_reference }}</dt><dd>{{ r.reference }}</dd></div>
+          <div><dt>{{ ui.history_row_what }}</dt><dd>{{ r.what }}</dd></div>
+          <div><dt>{{ ui.history_row_actor }}</dt><dd>{{ r.actor }}</dd></div>
+        </dl>
+      </div>
+    {% endfor %}
+    {% else %}
+      <p id="history_none">{{ none }}</p>
+    {% endif %}
+  </section>
+  <p id="back_to_finances">
+    <a href="/o/{{ center.slug }}/center/finances/" data-kind="finances">{{ ui.finances_heading }}</a>
+  </p>
+{% endblock %}

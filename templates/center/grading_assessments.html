@@ -1,0 +1,32 @@
+{% extends "center/base.html" %}
+{# This centre's assessments, each attached to one of its own cohorts (GRD-001/GRD-002). The instructor's rows are the assessments of their assigned cohorts only, decided at the server. Nothing here reads another centre (RULE 6.1). #}
+{% block content %}
+  <section id="grading_assessments">
+    <p>{{ ui.grading_assessments_heading }}</p>
+    <p>{{ ui.grading_assessments_hint }}</p>
+    {% if rows %}
+    {% for r in rows %}
+      <div id="assessment-{{ r.number }}">
+        <p>{{ r.number }}</p>
+        <p>{{ r.title }}</p>
+        <p>{{ r.type }}</p>
+        <p>{{ r.cohort }}</p>
+        <p>{{ r.course }}</p>
+        <p>{{ r.date }}</p>
+        <p>{{ r.max }}</p>
+        <a href="/o/{{ center.slug }}/center/grading/assessments/{{ r.number }}/" data-kind="assessment">{{ r.number }}</a>
+      </div>
+    {% endfor %}
+    {% else %}
+      <p id="grading_assessments_none">{{ none }}</p>
+    {% endif %}
+  </section>
+  {% if can_manage %}
+    <p id="manage_assessments">
+      <a href="/o/{{ center.slug }}/center/grading/assessments/manage/" data-kind="assessments.manage">{{ ui.grading_assessments_manage_heading }}</a>
+    </p>
+  {% endif %}
+  <p id="back_to_grading">
+    <a href="/o/{{ center.slug }}/center/grading/" data-kind="grading">{{ ui.grading_heading }}</a>
+  </p>
+{% endblock %}

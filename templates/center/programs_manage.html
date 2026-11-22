@@ -1,0 +1,16 @@
+{% extends "center/base.html" %}
+{# The page programs are made, changed, and given their courses on (ACAD-004). One action here. The form is on this page, and after the attempt the person stays on this page and sees what was not accepted and why (RULE 6.3). #}
+{% block content %}
+  <section id="programs_manage">
+    <p>{{ ui.programs_manage_heading }}</p>
+    <dl>
+      {% for f in fields %}
+        <div id="{{ f.id }}"><dt>{{ f.title }}</dt><dd>{{ f.value }}</dd></div>
+        {% if f.problem %}<p id="{{ f.id }}_problem">{{ f.problem }}</p>{% endif %}
+      {% endfor %}
+    </dl>
+  </section>
+  <p id="list_programs">
+    <a href="/o/{{ center.slug }}/center/programs/" data-kind="programs">{{ ui.programs_heading }}</a>
+  </p>
+{% endblock %}

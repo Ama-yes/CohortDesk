@@ -1,0 +1,4 @@
+# Pinned application dependencies. Change deliberately and record in docs/DECISIONS.md.
+# Django 6.1.3 is the current release (supports Python 3.12-3.15); Python here is 3.14.
+Django==6.1.3
+psycopg==3.3.9

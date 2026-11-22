@@ -1,0 +1,13 @@
+{% extends "center/base.html" %}
+{# One academic period of this centre, in full (ACAD-006). A date with nothing recorded says so rather than showing an empty value. This page answers only about this centre's own record (RULE 6.1). #}
+{% block content %}
+  <section id="period-{{ number }}">
+    <dl>
+      {% for p in profile %}<div id="{{ p.id }}"><dt>{{ p.title }}</dt><dd>{{ p.value }}</dd></div>
+      {% endfor %}
+    </dl>
+  </section>
+  <p id="manage_periods">
+    <a href="/o/{{ center.slug }}/center/periods/manage/" data-kind="periods_manage">{{ ui.periods_manage_heading }}</a>
+  </p>
+{% endblock %}

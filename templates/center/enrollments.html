@@ -1,0 +1,25 @@
+{% extends "center/base.html" %}
+{# The page a tenant centre's enrollment records are listed on (COH-003/COH-004). Nothing here reads another centre (RULE 6.1). #}
+{% block content %}
+  <section id="enrollments">
+    <p>{{ ui.enrollments_heading }}</p>
+    {% if enrollments %}
+    {% for e in enrollments %}
+      <div id="enrollment-{{ e.number }}">
+        <p>{{ e.number }}</p>
+        <p>{{ e.student_number }}</p>
+        <p>{{ e.student_name }}</p>
+        <p>{{ e.cohort }}</p>
+        <p>{{ e.status }}</p>
+        <p>{{ e.fee }}</p>
+        <p>{{ e.enrolled_at }}</p>
+      </div>
+    {% endfor %}
+    {% else %}
+      <p id="enrollments_none">{{ ui.enrollments_none }}</p>
+    {% endif %}
+  </section>
+  <p id="manage_enrollments">
+    <a href="/o/{{ center.slug }}/center/enrollments/manage/" data-kind="enrollments_manage">{{ ui.enrollments_manage_heading }}</a>
+  </p>
+{% endblock %}

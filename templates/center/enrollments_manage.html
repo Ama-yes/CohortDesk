@@ -1,0 +1,17 @@
+{% extends "center/base.html" %}
+{# The page a student is enrolled on and an enrollment is moved on (COH-003..COH-005). One action here. The form is on this page, and after the attempt the person stays on this page and sees what was not accepted and why (RULE 6.3). #}
+{% block content %}
+  <section id="enrollments_manage">
+    <p>{{ ui.enrollments_manage_heading }}</p>
+    <p id="fee_defaults_from_course">{{ notice }}</p>
+    <dl>
+      {% for f in fields %}
+        <div id="{{ f.id }}"><dt>{{ f.title }}</dt><dd>{{ f.value }}</dd></div>
+        {% if f.problem %}<p id="{{ f.id }}_problem">{{ f.problem }}</p>{% endif %}
+      {% endfor %}
+    </dl>
+  </section>
+  <p id="list_enrollments">
+    <a href="/o/{{ center.slug }}/center/enrollments/" data-kind="enrollments">{{ ui.enrollments_heading }}</a>
+  </p>
+{% endblock %}

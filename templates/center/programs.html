@@ -1,0 +1,22 @@
+{% extends "center/base.html" %}
+{# The page a tenant centre's programs are listed on (ACAD-004). A centre that needs no programs has none, and this page is not offered to it (ACAD-004 first sentence). Nothing here reads another centre (RULE 6.1). #}
+{% block content %}
+  <section id="programs">
+    <p>{{ ui.programs_heading }}</p>
+    {% if programs %}
+    {% for p in programs %}
+      <div id="program-{{ p.number }}">
+        <p>{{ p.number }}</p>
+        <p>{{ p.title }}</p>
+        <p>{{ p.description }}</p>
+        <a href="/o/{{ center.slug }}/center/programs/{{ p.number }}/" data-kind="program">{{ p.number }}</a>
+      </div>
+    {% endfor %}
+    {% else %}
+      <p id="programs_none">{{ ui.programs_none }}</p>
+    {% endif %}
+  </section>
+  <p id="manage_programs">
+    <a href="/o/{{ center.slug }}/center/programs/manage/" data-kind="programs_manage">{{ ui.programs_manage_heading }}</a>
+  </p>
+{% endblock %}

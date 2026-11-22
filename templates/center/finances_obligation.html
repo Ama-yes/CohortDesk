@@ -1,0 +1,94 @@
+{% extends "center/base.html" %}
+{# One fee agreement at this centre, in full (FIN-001..FIN-005): its own figures read from the transactions, its installments, adjustments, payments, and audit rows. A part with nothing recorded says so rather than showing an empty value. This page answers only about this centre's own record (FIN-015): the same number elsewhere is another person. #}
+{% block content %}
+  <section id="obligation-{{ number }}">
+    <dl id="obligation_figures">
+      {% for d in rows %}<div id="{{ d.id }}"><dt>{{ d.title }}</dt><dd>{{ d.value }}</dd></div>
+      {% endfor %}
+    </dl>
+  </section>
+  <section id="obligation_installments">
+    <p id="obligation_installments_heading">{{ ui.installments_heading }}</p>
+    {% if installments %}
+    {% for i in installments %}
+      <div id="installment-{{ i.id }}">
+        <dl>
+          <div><dt>{{ ui.installment_row_number }}</dt><dd>{{ i.id }}</dd></div>
+          <div><dt>{{ ui.installment_row_plan }}</dt><dd>{{ i.plan }}</dd></div>
+          <div><dt>{{ ui.installment_row_amount }}</dt><dd>{{ i.amount }}</dd></div>
+          <div><dt>{{ ui.installment_row_due }}</dt><dd>{{ i.due }}</dd></div>
+          <div><dt>{{ ui.installment_row_outstanding }}</dt><dd>{{ i.outstanding }}</dd></div>
+          <div><dt>{{ ui.installment_row_overdue }}</dt><dd>{{ i.overdue }}</dd></div>
+          <div><dt>{{ ui.installment_row_note }}</dt><dd>{{ i.note }}</dd></div>
+          <div><dt>{{ ui.installment_row_at }}</dt><dd>{{ i.at }}</dd></div>
+        </dl>
+      </div>
+    {% endfor %}
+    {% else %}
+      <p id="installments_none">{{ installments_none }}</p>
+    {% endif %}
+  </section>
+  <section id="obligation_adjustments">
+    <p id="obligation_adjustments_heading">{{ ui.adjustments_heading }}</p>
+    {% if adjustments %}
+    {% for a in adjustments %}
+      <div id="obligation-adjustment-{{ a.id }}">
+        <dl>
+          <div><dt>{{ ui.adjustment_row_number }}</dt><dd><a href="/o/{{ center.slug }}/center/finances/adjustments/{{ a.id }}/" data-kind="adjustment">{{ a.id }}</a></dd></div>
+          <div><dt>{{ ui.adjustment_row_agreement }}</dt><dd>{{ a.agreement }}</dd></div>
+          <div><dt>{{ ui.adjustment_row_kind }}</dt><dd>{{ a.kind }}</dd></div>
+          <div><dt>{{ ui.adjustment_row_amount }}</dt><dd>{{ a.amount }}</dd></div>
+          <div><dt>{{ ui.adjustment_row_payment }}</dt><dd>{{ a.payment }}</dd></div>
+          <div><dt>{{ ui.adjustment_row_reason }}</dt><dd>{{ a.reason }}</dd></div>
+          <div><dt>{{ ui.adjustment_row_actor }}</dt><dd>{{ a.actor }}</dd></div>
+          <div><dt>{{ ui.adjustment_row_at }}</dt><dd>{{ a.at }}</dd></div>
+        </dl>
+      </div>
+    {% endfor %}
+    {% else %}
+      <p id="adjustments_none">{{ adjustments_none }}</p>
+    {% endif %}
+  </section>
+  <section id="obligation_payments">
+    <p id="obligation_payments_heading">{{ ui.payments_heading }}</p>
+    {% if payments %}
+    {% for p in payments %}
+      <div id="obligation-payment-{{ p.id }}">
+        <dl>
+          <div><dt>{{ ui.payment_row_number }}</dt><dd><a href="/o/{{ center.slug }}/center/finances/payments/{{ p.id }}/" data-kind="payment">{{ p.id }}</a></dd></div>
+          <div><dt>{{ ui.payment_row_amount }}</dt><dd>{{ p.amount }}</dd></div>
+          <div><dt>{{ ui.payment_row_received }}</dt><dd>{{ p.received }}</dd></div>
+          <div><dt>{{ ui.payment_row_method }}</dt><dd>{{ p.method }}</dd></div>
+          <div><dt>{{ ui.payment_row_status }}</dt><dd>{{ p.status }}</dd></div>
+          <div><dt>{{ ui.payment_row_receipt }}</dt><dd>{{ p.receipt }}</dd></div>
+          <div><dt>{{ ui.payment_row_actor }}</dt><dd>{{ p.actor }}</dd></div>
+          <div><dt>{{ ui.payment_row_at }}</dt><dd>{{ p.at }}</dd></div>
+        </dl>
+      </div>
+    {% endfor %}
+    {% else %}
+      <p id="payments_none">{{ payments_none }}</p>
+    {% endif %}
+  </section>
+  <section id="obligation_audit">
+    <p id="obligation_audit_heading">{{ ui.audit_heading }}</p>
+    {% if audit %}
+    {% for a in audit %}
+      <div id="obligation-audit-{{ a.id }}">
+        <dl>
+          <div><dt>{{ ui.audit_row_number }}</dt><dd>{{ a.id }}</dd></div>
+          <div><dt>{{ ui.audit_row_action }}</dt><dd>{{ a.action }}</dd></div>
+          <div><dt>{{ ui.audit_row_records }}</dt><dd>{{ a.records }}</dd></div>
+          <div><dt>{{ ui.audit_row_actor }}</dt><dd>{{ a.actor }}</dd></div>
+          <div><dt>{{ ui.audit_row_at }}</dt><dd>{{ a.at }}</dd></div>
+        </dl>
+      </div>
+    {% endfor %}
+    {% else %}
+      <p id="audit_none">{{ audit_none }}</p>
+    {% endif %}
+  </section>
+  <p id="obligation_back">
+    <a href="{{ back.href }}" data-kind="{{ back.kind }}">{{ back.title }}</a>
+  </p>
+{% endblock %}

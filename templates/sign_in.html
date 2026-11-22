@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{# The page a person signs in on (AUTH-001): the account's own two fields, and nothing about any centre. A failed sign-in is shown here again, never as a page of its own (RULE 6.3). #}
+{% block title %}{{ ui.sign_in_heading }}{% endblock %}
+{% block content %}
+  <div id="home">
+    <p id="sign_in_heading">{{ ui.sign_in_heading }}</p>
+  </div>
+{% endblock %}

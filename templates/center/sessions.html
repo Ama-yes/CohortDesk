@@ -1,0 +1,35 @@
+{% extends "center/base.html" %}
+{# The centre's class occurrences (SCH-002/SCH-003/SCH-004). Every row is this centre's own record (RULE 6.1), and each session's figures are the attendance records made for that session alone (ATT-004/ATT-006), kept apart by their four states so an excused absence stays visible on its own. Nothing here reads another centre. #}
+{% block content %}
+  <section id="sessions">
+    <p>{{ ui.sessions_heading }}</p>
+    {% if sessions %}
+    {% for s in sessions %}
+      <div id="session-{{ s.number }}">
+        <p>{{ s.number }}</p>
+        <p>{{ s.cohort }}</p>
+        <p>{{ s.course }}</p>
+        <p>{{ s.start }}</p>
+        <p>{{ s.end }}</p>
+        <p>{{ s.note }}</p>
+        <p id="session_room-{{ s.number }}">{{ s.room }}</p>
+        <p id="session_status-{{ s.number }}">{{ s.status }}</p>
+        {% for w in s.warnings %}<p id="session_warning-{{ s.number }}-{{ w.kind }}">{{ w.text }}</p>{% endfor %}
+        <p>{{ s.present }}</p>
+        <p>{{ s.absent }}</p>
+        <p>{{ s.late }}</p>
+        <p>{{ s.excused }}</p>
+        <p>{{ s.records }}</p>
+      </div>
+    {% endfor %}
+    {% else %}
+      <p id="sessions_none">{{ ui.sessions_none }}</p>
+    {% endif %}
+  </section>
+  <p id="manage_sessions">
+    <a href="/o/{{ center.slug }}/center/sessions/manage/" data-kind="sessions_manage">{{ ui.sessions_manage_heading }}</a>
+  </p>
+  <p id="list_attendance">
+    <a href="/o/{{ center.slug }}/center/attendance/" data-kind="attendance">{{ ui.attendance_heading }}</a>
+  </p>
+{% endblock %}

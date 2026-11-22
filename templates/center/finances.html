@@ -1,0 +1,39 @@
+{% extends "center/base.html" %}
+{# The centre's finance hub (FIN-010): the centre's own summaries, and the way down to every finance page. Nothing here reads another centre (RULE 6.1). #}
+{% block content %}
+  <section id="finances">
+    <p>{{ ui.finances_heading }}</p>
+    <p>{{ ui.finances_hint }}</p>
+    <dl id="finances_summary">
+      {% for s in summary %}<div id="{{ s.id }}"><dt>{{ s.title }}</dt><dd>{{ s.value }}</dd></div>
+      {% endfor %}
+    </dl>
+  </section>
+  <p id="finances_obligations_link">
+    <a href="/o/{{ center.slug }}/center/finances/obligations/" data-kind="obligations">{{ ui.obligations_heading }}</a>
+  </p>
+  <p id="finances_plans_link">
+    <a href="/o/{{ center.slug }}/center/finances/plans/" data-kind="plans">{{ ui.plans_heading }}</a>
+  </p>
+  <p id="finances_installments_link">
+    <a href="/o/{{ center.slug }}/center/finances/installments/" data-kind="installments">{{ ui.installments_heading }}</a>
+  </p>
+  <p id="finances_payments_link">
+    <a href="/o/{{ center.slug }}/center/finances/payments/" data-kind="payments">{{ ui.payments_heading }}</a>
+  </p>
+  <p id="finances_adjustments_link">
+    <a href="/o/{{ center.slug }}/center/finances/adjustments/" data-kind="adjustments">{{ ui.adjustments_heading }}</a>
+  </p>
+  <p id="finances_expenses_link">
+    <a href="/o/{{ center.slug }}/center/finances/expenses/" data-kind="expenses">{{ ui.expenses_heading }}</a>
+  </p>
+  <p id="finances_receipts_link">
+    <a href="/o/{{ center.slug }}/center/finances/receipts/" data-kind="receipts">{{ ui.receipts_heading }}</a>
+  </p>
+  <p id="finances_history_link">
+    <a href="/o/{{ center.slug }}/center/finances/history/" data-kind="history">{{ ui.history_heading }}</a>
+  </p>
+  <p id="finances_audit_link">
+    <a href="/o/{{ center.slug }}/center/finances/audit/" data-kind="audit">{{ ui.audit_heading }}</a>
+  </p>
+{% endblock %}

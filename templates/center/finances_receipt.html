@@ -1,0 +1,16 @@
+{% extends "center/base.html" %}
+{# One receipt at this centre, and the same rows as a file the person can take away (FIN-007). This page answers only about this centre's own record (FIN-015). #}
+{% block content %}
+  <section id="receipt-{{ number }}">
+    <dl id="receipt_figures">
+      {% for d in rows %}<div id="{{ d.id }}"><dt>{{ d.title }}</dt><dd>{{ d.value }}</dd></div>
+      {% endfor %}
+    </dl>
+  </section>
+  <p id="receipt_csv">
+    <a href="{{ csv.href }}" data-kind="receipt_csv">{{ csv.title }}</a>
+  </p>
+  <p id="receipt_back">
+    <a href="{{ back.href }}" data-kind="{{ back.kind }}">{{ back.title }}</a>
+  </p>
+{% endblock %}

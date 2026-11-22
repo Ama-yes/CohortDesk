@@ -1,0 +1,24 @@
+{% extends "center/base.html" %}
+{# The page a tenant centre's reusable courses are listed on (ACAD-001). Archived courses are listed too: a course that history references is archived, never deleted (ACAD-005). Nothing here reads another centre (RULE 6.1). #}
+{% block content %}
+  <section id="courses">
+    <p>{{ ui.courses_heading }}</p>
+    {% if courses %}
+    {% for c in courses %}
+      <div id="course-{{ c.number }}">
+        <p>{{ c.number }}</p>
+        <p>{{ c.title }}</p>
+        <p>{{ c.level }}</p>
+        <p>{{ c.program }}</p>
+        <p>{{ c.status }}</p>
+        <a href="/o/{{ center.slug }}/center/courses/{{ c.number }}/" data-kind="course">{{ c.number }}</a>
+      </div>
+    {% endfor %}
+    {% else %}
+      <p id="courses_none">{{ ui.courses_none }}</p>
+    {% endif %}
+  </section>
+  <p id="manage_courses">
+    <a href="/o/{{ center.slug }}/center/courses/manage/" data-kind="courses_manage">{{ ui.courses_manage_heading }}</a>
+  </p>
+{% endblock %}

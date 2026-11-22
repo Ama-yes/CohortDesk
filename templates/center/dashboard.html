@@ -1,0 +1,13 @@
+{% extends "center/base.html" %}
+{% block content %}
+  <div id="home">
+    <p id="center_name">{{ center.name }}</p>
+    <p id="center_address">{{ address }}</p>
+    <dl id="settings">
+      {% for s in settings %}<div id="{{ s.id }}"><dt>{{ s.title }}</dt><dd>{{ s.value }}</dd></div>
+      {% endfor %}
+    </dl>
+    <p id="my_role">{{ role }}</p>
+    <p id="viewing">{{ viewing }}</p>
+  </div>
+{% endblock %}

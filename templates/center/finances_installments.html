@@ -1,0 +1,35 @@
+{% extends "center/base.html" %}
+{# This centre's installments, each with its date and what is still owed at it (FIN-004/FIN-011). What is owed is derived from the allocations, never stored (FIN-005). Nothing here reads another centre (RULE 6.1). #}
+{% block content %}
+  <section id="finances_installments">
+    <p>{{ ui.installments_heading }}</p>
+    <p>{{ ui.installments_hint }}</p>
+    {% if rows %}
+    {% for r in rows %}
+      <div id="installments-for-{{ r.code }}">
+        <p>{{ r.agreement }}</p>
+        <p>{{ r.code }}</p>
+        {% for i in r.installments %}
+          <div id="installment-{{ i.id }}">
+            <dl>
+              <div><dt>{{ ui.installment_row_number }}</dt><dd>{{ i.id }}</dd></div>
+              <div><dt>{{ ui.installment_row_plan }}</dt><dd>{{ i.plan }}</dd></div>
+              <div><dt>{{ ui.installment_row_amount }}</dt><dd>{{ i.amount }}</dd></div>
+              <div><dt>{{ ui.installment_row_due }}</dt><dd>{{ i.due }}</dd></div>
+              <div><dt>{{ ui.installment_row_outstanding }}</dt><dd>{{ i.outstanding }}</dd></div>
+              <div><dt>{{ ui.installment_row_overdue }}</dt><dd>{{ i.overdue }}</dd></div>
+              <div><dt>{{ ui.installment_row_note }}</dt><dd>{{ i.note }}</dd></div>
+              <div><dt>{{ ui.installment_row_at }}</dt><dd>{{ i.at }}</dd></div>
+            </dl>
+          </div>
+        {% endfor %}
+      </div>
+    {% endfor %}
+    {% else %}
+      <p id="installments_none">{{ none }}</p>
+    {% endif %}
+  </section>
+  <p id="manage_obligations">
+    <a href="/o/{{ center.slug }}/center/finances/obligations/manage/" data-kind="obligations_manage">{{ ui.obligations_manage_heading }}</a>
+  </p>
+{% endblock %}

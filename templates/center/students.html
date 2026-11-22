@@ -1,0 +1,22 @@
+{% extends "center/base.html" %}
+{# The page a tenant centre's student records are listed on (STU-001). Archived records are listed too: a record is never lost, only archived (STU-008). Nothing here reads another centre (RULE 6.1). #}
+{% block content %}
+  <section id="students">
+    <p>{{ ui.students_heading }}</p>
+    {% if students %}
+    {% for s in students %}
+      <div id="person-{{ s.number }}">
+        <p>{{ s.number }}</p>
+        <p>{{ s.name }}</p>
+        <p>{{ s.status }}</p>
+        <a href="/o/{{ center.slug }}/center/students/{{ s.number }}/" data-kind="student">{{ s.number }}</a>
+      </div>
+    {% endfor %}
+    {% else %}
+      <p id="students_none">{{ ui.students_none }}</p>
+    {% endif %}
+  </section>
+  <p id="manage_students">
+    <a href="/o/{{ center.slug }}/center/students/manage/" data-kind="students_manage">{{ ui.students_manage_heading }}</a>
+  </p>
+{% endblock %}

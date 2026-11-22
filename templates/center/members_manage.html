@@ -1,0 +1,13 @@
+{% extends "center/base.html" %}
+{# The page a change to the people of a tenant centre is made on (AUTH-006/007). Adding, suspending, restoring, and changing a person's role is one action here. The form is on this page, and after the change the person stays on this page and sees what was not accepted (RULE 6.3). #}
+{% block content %}
+  <section id="members_manage">
+    <p>{{ ui.members_manage_heading }}</p>
+    <dl>
+      {% for f in fields %}
+        <div id="{{ f.id }}"><dt>{{ f.title }}</dt><dd>{{ f.value }}</dd></div>
+        {% if f.problem %}<p id="{{ f.id }}_problem">{{ f.problem }}</p>{% endif %}
+      {% endfor %}
+    </dl>
+  </section>
+{% endblock %}

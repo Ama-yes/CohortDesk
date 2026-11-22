@@ -1,0 +1,66 @@
+{% extends "center/base.html" %}
+{# One payment at this centre, in full (FIN-006/FIN-011): its own amount, where the money went through the allocations, and the reversals that take it back. This page answers only about this centre's own record (FIN-015). #}
+{% block content %}
+  <section id="payment-{{ number }}">
+    <dl id="payment_figures">
+      {% for d in rows %}<div id="{{ d.id }}"><dt>{{ d.title }}</dt><dd>{{ d.value }}</dd></div>
+      {% endfor %}
+    </dl>
+  </section>
+  <section id="payment_allocations">
+    <p id="payment_allocations_heading">{{ ui.installments_heading }}</p>
+    {% if allocations %}
+    {% for a in allocations %}
+      <div id="allocation-{{ a.installment }}">
+        <dl>
+          <div><dt>{{ ui.allocation_row_installment }}</dt><dd>{{ a.installment }}</dd></div>
+          <div><dt>{{ ui.allocation_row_agreement }}</dt><dd>{{ a.agreement }}</dd></div>
+          <div><dt>{{ ui.allocation_row_amount }}</dt><dd>{{ a.amount }}</dd></div>
+        </dl>
+      </div>
+    {% endfor %}
+    {% else %}
+      <p id="allocations_none">{{ allocations_none }}</p>
+    {% endif %}
+  </section>
+  <section id="payment_reversals">
+    <p id="payment_reversals_heading">{{ ui.adjustments_heading }}</p>
+    {% if reversals %}
+    {% for a in reversals %}
+      <div id="payment-reversal-{{ a.id }}">
+        <dl>
+          <div><dt>{{ ui.adjustment_row_number }}</dt><dd>{{ a.id }}</dd></div>
+          <div><dt>{{ ui.adjustment_row_kind }}</dt><dd>{{ a.kind }}</dd></div>
+          <div><dt>{{ ui.adjustment_row_amount }}</dt><dd>{{ a.amount }}</dd></div>
+          <div><dt>{{ ui.adjustment_row_reason }}</dt><dd>{{ a.reason }}</dd></div>
+          <div><dt>{{ ui.adjustment_row_actor }}</dt><dd>{{ a.actor }}</dd></div>
+          <div><dt>{{ ui.adjustment_row_at }}</dt><dd>{{ a.at }}</dd></div>
+        </dl>
+      </div>
+    {% endfor %}
+    {% else %}
+      <p id="reversals_none">{{ reversals_none }}</p>
+    {% endif %}
+  </section>
+  <section id="payment_audit">
+    <p id="payment_audit_heading">{{ ui.audit_heading }}</p>
+    {% if audit %}
+    {% for a in audit %}
+      <div id="payment-audit-{{ a.id }}">
+        <dl>
+          <div><dt>{{ ui.audit_row_number }}</dt><dd>{{ a.id }}</dd></div>
+          <div><dt>{{ ui.audit_row_action }}</dt><dd>{{ a.action }}</dd></div>
+          <div><dt>{{ ui.audit_row_records }}</dt><dd>{{ a.records }}</dd></div>
+          <div><dt>{{ ui.audit_row_actor }}</dt><dd>{{ a.actor }}</dd></div>
+          <div><dt>{{ ui.audit_row_at }}</dt><dd>{{ a.at }}</dd></div>
+        </dl>
+      </div>
+    {% endfor %}
+    {% else %}
+      <p id="audit_none">{{ audit_none }}</p>
+    {% endif %}
+  </section>
+  <p id="payment_back">
+    <a href="{{ back.href }}" data-kind="{{ back.kind }}">{{ back.title }}</a>
+  </p>
+{% endblock %}

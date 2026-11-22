@@ -1,0 +1,68 @@
+{% extends "center/base.html" %}
+{# One staff record of this centre, in full, with the courses and cohorts the instructor is assigned to (STAFF-002/STAFF-003/STAFF-004), and the sessions of those cohorts with their attendance figures, shown only to those who may see attendance. A part with nothing recorded says so rather than showing an empty value. This page answers only about this centre's own record (RULE 6.1). #}
+{% block content %}
+  <section id="staff-{{ number }}">
+    <dl>
+      {% for p in profile %}<div id="{{ p.id }}"><dt>{{ p.title }}</dt><dd>{{ p.value }}</dd></div>
+      {% endfor %}
+    </dl>
+      <p id="staff_account_link">{{ ui.staff_account_note }}: {{ link_present }}</p>
+  </section>
+  <section id="assigned_courses">
+    <p>{{ ui.assigned_courses_heading }}</p>
+    {% if courses %}
+    {% for c in courses %}
+      <div id="assigned_course-{{ c.number }}">
+        <p>{{ c.title }}</p>
+        <a href="/o/{{ center.slug }}/center/courses/{{ c.number }}/" data-kind="course">{{ c.number }}</a>
+      </div>
+    {% endfor %}
+    {% else %}
+      <p id="assigned_courses_none">{{ ui.assigned_courses_none }}</p>
+    {% endif %}
+  </section>
+  <section id="assigned_cohorts">
+    <p>{{ ui.assigned_cohorts_heading }}</p>
+    {% if cohorts %}
+    {% for c in cohorts %}
+      <div id="assigned_cohort-{{ c.number }}">
+        <p>{{ c.name }}</p>
+        <p>{{ c.course }}</p>
+        <a href="/o/{{ center.slug }}/center/cohorts/{{ c.number }}/" data-kind="cohort">{{ c.number }}</a>
+      </div>
+    {% endfor %}
+    {% else %}
+      <p id="assigned_cohorts_none">{{ ui.assigned_cohorts_none }}</p>
+    {% endif %}
+  </section>
+  {% if sessions %}
+  <section id="staff_sessions">
+    <p id="staff_sessions_heading">{{ ui.staff_sessions_heading }}</p>
+    {% for s in sessions %}
+      <div id="staff_session-{{ s.number }}">
+        <p>{{ s.number }}</p>
+        <p>{{ s.cohort }}</p>
+        <p>{{ s.course }}</p>
+        <p>{{ s.start }}</p>
+        <p>{{ s.end }}</p>
+        <p>{{ s.note }}</p>
+        <p id="staff_session_present-{{ s.number }}">{{ s.present }}</p>
+        <p id="staff_session_absent-{{ s.number }}">{{ s.absent }}</p>
+        <p id="staff_session_late-{{ s.number }}">{{ s.late }}</p>
+        <p id="staff_session_excused-{{ s.number }}">{{ s.excused }}</p>
+        <p id="staff_session_records-{{ s.number }}">{{ s.records }}</p>
+        <a href="/o/{{ center.slug }}/center/attendance/{{ s.number }}/" data-kind="attendance_session">{{ s.number }}</a>
+      </div>
+    {% endfor %}
+    <dl id="staff_sessions_totals">
+      {% for t in sessions_total %}<div id="{{ t.id }}"><dt>{{ t.title }}</dt><dd>{{ t.value }}</dd></div>
+      {% endfor %}
+    </dl>
+  </section>
+  {% else %}
+  <p id="staff_sessions_none">{{ ui.staff_sessions_none }}</p>
+  {% endif %}
+  <p id="list_staff">
+    <a href="/o/{{ center.slug }}/center/staff/" data-kind="staff">{{ ui.staff_heading }}</a>
+  </p>
+{% endblock %}

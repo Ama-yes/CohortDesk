@@ -1,0 +1,83 @@
+{% extends "center/base.html" %}
+{# One student record at this centre, in full (ADM-001, STU-005). A part with nothing recorded says so rather than showing an empty value. This page answers only about this centre's own record (STU-002): the same number elsewhere is another person. #}
+{% block content %}
+  <section id="student-{{ number }}">
+    <dl>
+      {% for p in profile %}<div id="{{ p.id }}"><dt>{{ p.title }}</dt><dd>{{ p.value }}</dd></div>
+      {% endfor %}
+    </dl>
+  </section>
+  {% if applications %}
+  <section id="applications_made">
+    {% for a in applications %}
+      <div id="made-application-{{ a.id }}">
+        <p>{{ ui.applications_number }} {{ a.id }}</p>
+        <p>{{ a.name }}</p>
+        <p>{{ a.course }}</p>
+        <p>{{ a.status }}</p>
+      </div>
+    {% endfor %}
+    <p id="desired_course_is_text">{{ ui.desired_course_is_text }}</p>
+  </section>
+  {% endif %}
+  {% if attendance %}
+  <section id="attendance_history">
+    <p id="attendance_history_heading">{{ ui.attendance_history_heading }}</p>
+    {% for a in attendance %}
+      <div id="attendance-history-{{ a.session_number }}-{{ a.student_number }}">
+        <dl>
+          <div><dt>{{ ui.attendance_history_session }}</dt><dd>{{ a.session_number }}</dd></div>
+          <div><dt>{{ ui.sessions_start }}</dt><dd>{{ a.session_start }}</dd></div>
+          <div><dt>{{ ui.sessions_cohort }}</dt><dd>{{ a.cohort }}</dd></div>
+          <div><dt>{{ ui.sessions_course }}</dt><dd>{{ a.course }}</dd></div>
+          <div><dt>{{ ui.attendance_history_status }}</dt><dd>{{ a.status }}</dd></div>
+          <div><dt>{{ ui.attendance_history_recorded_at }}</dt><dd>{{ a.recorded }}</dd></div>
+          <div><dt>{{ ui.attendance_history_status_changed }}</dt><dd>{{ a.changed }}</dd></div>
+          <div><dt>{{ ui.attendance_history_note }}</dt><dd>{{ a.note }}</dd></div>
+        </dl>
+      </div>
+    {% endfor %}
+    <dl id="attendance_history_totals">
+      {% for t in attendance_totals %}<div id="{{ t.id }}"><dt>{{ t.title }}</dt><dd>{{ t.value }}</dd></div>
+      {% endfor %}
+    </dl>
+  </section>
+  {% endif %}
+  {% if attendance_corrections %}
+  <section id="attendance_corrections">
+    <p id="attendance_corrections_heading">{{ ui.attendance_history_corrections }}</p>
+    {% for c in attendance_corrections %}
+      <div id="attendance-correction-{{ c.session_number }}-{{ c.student_number }}-{{ c.at }}">
+        <dl>
+          <div><dt>{{ ui.attendance_history_session }}</dt><dd>{{ c.session_number }}</dd></div>
+          <div><dt>{{ ui.sessions_cohort }}</dt><dd>{{ c.cohort }}</dd></div>
+          <div><dt>{{ ui.field_student_number }}</dt><dd>{{ c.student_number }}</dd></div>
+          <div><dt>{{ ui.field_name }}</dt><dd>{{ c.name }}</dd></div>
+          <div><dt>{{ ui.attendance_history_correction_from }}</dt><dd>{{ c.previous }}</dd></div>
+          <div><dt>{{ ui.attendance_history_correction_to }}</dt><dd>{{ c.new }}</dd></div>
+          <div><dt>{{ ui.attendance_history_correction_actor }}</dt><dd>{{ c.actor }}</dd></div>
+          <div><dt>{{ ui.attendance_history_correction_at }}</dt><dd>{{ c.at }}</dd></div>
+        </dl>
+      </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+  {% if grading_results %}
+  <section id="grading_results">
+    <p id="grading_results_heading">{{ ui.grading_student_results_heading }}</p>
+    {% for r in grading_results %}
+      <div id="grading-result-{{ r.number }}">
+        <dl>
+          <div><dt>{{ ui.grading_result_row_assessment }}</dt><dd>{{ r.assessment }}</dd></div>
+          <div><dt>{{ ui.grading_result_row_score }}</dt><dd>{{ r.score }}</dd></div>
+          <div><dt>{{ ui.grading_result_row_max }}</dt><dd>{{ r.max }}</dd></div>
+          <div><dt>{{ ui.grading_result_row_at }}</dt><dd>{{ r.at }}</dd></div>
+        </dl>
+      </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+  <p id="manage_students">
+    <a href="/o/{{ center.slug }}/center/students/manage/" data-kind="students_manage">{{ ui.students_manage_heading }}</a>
+  </p>
+{% endblock %}

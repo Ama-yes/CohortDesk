@@ -1,0 +1,40 @@
+{% extends "center/base.html" %}
+{# One course of this centre, in full, with its ordered modules (ACAD-001/ACAD-002/ACAD-003). A part with nothing recorded says so rather than showing an empty value. This page answers only about this centre's own record (RULE 6.1). #}
+{% block content %}
+  <section id="course-{{ number }}">
+    <dl>
+      {% for p in profile %}<div id="{{ p.id }}"><dt>{{ p.title }}</dt><dd>{{ p.value }}</dd></div>
+      {% endfor %}
+    </dl>
+  </section>
+  <section id="modules">
+    <p>{{ ui.modules_heading }}</p>
+    {% if modules %}
+    {% for m in modules %}
+      <div id="module-{{ m.position }}">
+        <p>{{ m.position }}</p>
+        <p>{{ m.title }}</p>
+        <p>{{ m.description }}</p>
+      </div>
+    {% endfor %}
+    {% else %}
+      <p id="modules_none">{{ ui.modules_none }}</p>
+    {% endif %}
+  </section>
+  <section id="course_instructors">
+    <p>{{ ui.course_instructors_heading }}</p>
+    {% if instructors %}
+    {% for i in instructors %}
+      <div id="course_instructor-{{ i.number }}">
+        <p>{{ i.name }}</p>
+        <a href="/o/{{ center.slug }}/center/staff/{{ i.number }}/" data-kind="staff_member">{{ i.number }}</a>
+      </div>
+    {% endfor %}
+    {% else %}
+      <p id="course_instructors_none">{{ ui.course_instructors_none }}</p>
+    {% endif %}
+  </section>
+  <p id="manage_courses">
+    <a href="/o/{{ center.slug }}/center/courses/manage/" data-kind="courses_manage">{{ ui.courses_manage_heading }}</a>
+  </p>
+{% endblock %}

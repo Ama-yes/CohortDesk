@@ -1,0 +1,37 @@
+{% extends "center/base.html" %}
+{# One assessment at this centre, in full (GRD-002/GRD-007): its definition and its audit rows. A part with nothing recorded says so rather than showing an empty value. This page answers only about this centre's own record: the same number at another centre is another assessment (RULE 6.1). #}
+{% block content %}
+  <section id="assessment-{{ number }}">
+    <dl id="assessment_definition">
+      {% for d in rows %}<div id="{{ d.id }}"><dt>{{ d.title }}</dt><dd>{{ d.value }}</dd></div>
+      {% endfor %}
+    </dl>
+  </section>
+  <section id="assessment_audit">
+    <p id="assessment_audit_heading">{{ ui.grading_audit_heading }}</p>
+    {% if audit %}
+    {% for a in audit %}
+      <div id="audit-{{ a.id }}">
+        <dl>
+          <div><dt>{{ ui.grading_audit_row_number }}</dt><dd>{{ a.id }}</dd></div>
+          <div><dt>{{ ui.grading_audit_row_action }}</dt><dd>{{ a.action }}</dd></div>
+          <div><dt>{{ ui.grading_audit_row_records }}</dt><dd>{{ a.records }}</dd></div>
+          <div><dt>{{ ui.grading_audit_row_actor }}</dt><dd>{{ a.actor }}</dd></div>
+          <div><dt>{{ ui.grading_audit_row_at }}</dt><dd>{{ a.at }}</dd></div>
+          <div><dt>{{ ui.grading_audit_row_from }}</dt><dd>{{ a.from }}</dd></div>
+          <div><dt>{{ ui.grading_audit_row_to }}</dt><dd>{{ a.to }}</dd></div>
+          <div><dt>{{ ui.grading_audit_row_reason }}</dt><dd>{{ a.reason }}</dd></div>
+        </dl>
+      </div>
+    {% endfor %}
+    {% else %}
+      <p id="audit_none">{{ audit_none }}</p>
+    {% endif %}
+  </section>
+  <p id="assessment_results_link">
+    <a href="/o/{{ center.slug }}/center/grading/assessments/{{ number }}/results/" data-kind="assessment.results">{{ ui.grading_assessment_results_heading }}</a>
+  </p>
+  <p id="assessment_back">
+    <a href="{{ back.href }}" data-kind="{{ back.kind }}">{{ back.title }}</a>
+  </p>
+{% endblock %}

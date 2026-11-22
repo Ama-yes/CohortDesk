@@ -1,0 +1,30 @@
+{% extends "center/base.html" %}
+{# This centre's fee agreements, each with its figures read from the transactions themselves (FIN-001, FIN-005). Nothing here reads another centre (RULE 6.1). #}
+{% block content %}
+  <section id="finances_obligations">
+    <p>{{ ui.obligations_heading }}</p>
+    <p>{{ ui.obligations_hint }}</p>
+    {% if rows %}
+    {% for r in rows %}
+      <div id="obligation-{{ r.number }}">
+        <p>{{ r.number }}</p>
+        <p>{{ r.code }}</p>
+        <p>{{ r.status }}</p>
+        <p>{{ r.opened }}</p>
+        <p>{{ r.required }}</p>
+        <p>{{ r.allocated }}</p>
+        <p>{{ r.taken_back }}</p>
+        <p>{{ r.outstanding }}</p>
+        <p>{{ r.overdue }}</p>
+        <p>{{ r.overdue_amount }}</p>
+        <a href="/o/{{ center.slug }}/center/finances/obligations/{{ r.number }}/" data-kind="obligation">{{ r.number }}</a>
+      </div>
+    {% endfor %}
+    {% else %}
+      <p id="obligations_none">{{ none }}</p>
+    {% endif %}
+  </section>
+  <p id="manage_obligations">
+    <a href="/o/{{ center.slug }}/center/finances/obligations/manage/" data-kind="obligations_manage">{{ ui.obligations_manage_heading }}</a>
+  </p>
+{% endblock %}

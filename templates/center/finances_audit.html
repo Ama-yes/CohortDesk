@@ -1,0 +1,26 @@
+{% extends "center/base.html" %}
+{# This centre's audited financial actions, in the order they happened (FIN-014). Nothing here reads another centre (RULE 6.1). #}
+{% block content %}
+  <section id="finances_audit">
+    <p>{{ ui.audit_heading }}</p>
+    <p>{{ ui.audit_hint }}</p>
+    {% if rows %}
+    {% for r in rows %}
+      <div id="audit-{{ r.id }}">
+        <dl>
+          <div><dt>{{ ui.audit_row_number }}</dt><dd>{{ r.id }}</dd></div>
+          <div><dt>{{ ui.audit_row_action }}</dt><dd>{{ r.action }}</dd></div>
+          <div><dt>{{ ui.audit_row_records }}</dt><dd>{{ r.records }}</dd></div>
+          <div><dt>{{ ui.audit_row_actor }}</dt><dd>{{ r.actor }}</dd></div>
+          <div><dt>{{ ui.audit_row_at }}</dt><dd>{{ r.at }}</dd></div>
+        </dl>
+      </div>
+    {% endfor %}
+    {% else %}
+      <p id="audit_none">{{ none }}</p>
+    {% endif %}
+  </section>
+  <p id="back_to_finances">
+    <a href="/o/{{ center.slug }}/center/finances/" data-kind="finances">{{ ui.finances_heading }}</a>
+  </p>
+{% endblock %}

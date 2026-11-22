@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{# Every page a tenant centre has, in that centre's own page chain (RULE 6.8). Nothing on a tenant centre's page can read anything about another centre (RULE 6.1). #}
+{% block title %}{{ center.name }}{% endblock %}
+{% block bar %}
+  <p id="tenant_pages" data-org="{{ center.slug }}">
+    {% if nav.dashboard %}<a href="/o/{{ center.slug }}/center/dashboard/" data-kind="dashboard">{{ ui.dashboard }}</a>{% endif %}
+    {% if nav.settings %}<a href="/o/{{ center.slug }}/center/settings/" data-kind="settings">{{ ui.nav_settings }}</a>{% endif %}
+    {% if nav.members %}<a href="/o/{{ center.slug }}/center/members/" data-kind="members">{{ ui.nav_members }}</a>{% endif %}
+    {% if nav.students %}<a href="/o/{{ center.slug }}/center/students/" data-kind="students">{{ ui.nav_students }}</a>{% endif %}
+    {% if nav.applications %}<a href="/o/{{ center.slug }}/center/applications/" data-kind="applications">{{ ui.nav_applications }}</a>{% endif %}
+    {% if nav.courses %}<a href="/o/{{ center.slug }}/center/courses/" data-kind="courses">{{ ui.nav_courses }}</a>{% endif %}
+    {% if nav.programs %}<a href="/o/{{ center.slug }}/center/programs/" data-kind="programs">{{ ui.nav_programs }}</a>{% endif %}
+    {% if nav.cohorts %}<a href="/o/{{ center.slug }}/center/cohorts/" data-kind="cohorts">{{ ui.nav_cohorts }}</a>{% endif %}
+    {% if nav.enrollments %}<a href="/o/{{ center.slug }}/center/enrollments/" data-kind="enrollments">{{ ui.nav_enrollments }}</a>{% endif %}
+    {% if nav.sessions %}<a href="/o/{{ center.slug }}/center/sessions/" data-kind="sessions">{{ ui.nav_sessions }}</a>{% endif %}
+    {% if nav.schedule %}<a href="/o/{{ center.slug }}/center/schedule/day/" data-kind="schedule.day">{{ ui.nav_schedule }}</a>{% endif %}
+    {% if nav.rooms %}<a href="/o/{{ center.slug }}/center/rooms/" data-kind="rooms">{{ ui.nav_rooms }}</a>{% endif %}
+    {% if nav.attendance %}<a href="/o/{{ center.slug }}/center/attendance/" data-kind="attendance">{{ ui.nav_attendance }}</a>{% endif %}
+    {% if nav.periods %}<a href="/o/{{ center.slug }}/center/periods/" data-kind="periods">{{ ui.nav_periods }}</a>{% endif %}
+    {% if nav.reports %}<a href="/o/{{ center.slug }}/center/reports/" data-kind="reports">{{ ui.nav_reports }}</a>{% endif %}
+    {% if nav.staff %}<a href="/o/{{ center.slug }}/center/staff/" data-kind="staff">{{ ui.nav_staff }}</a>{% endif %}
+    {% if nav.finances %}<a href="/o/{{ center.slug }}/center/finances/" data-kind="finances">{{ ui.nav_finances }}</a>{% endif %}
+    {% if nav.grading %}<a href="/o/{{ center.slug }}/center/grading/" data-kind="grading">{{ ui.nav_grading }}</a>{% endif %}
+    {% if nav.my_staff %}<a href="/o/{{ center.slug }}/{{ nav.self_href }}" data-kind="staff.self">{{ ui.nav_my_staff }}</a>{% endif %}
+    <a href="/accounts/choose/" data-kind="accounts.choose">{{ ui.choose_center }}</a>
+  </p>
+{% endblock %}

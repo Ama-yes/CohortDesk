@@ -1,0 +1,24 @@
+{% extends "center/base.html" %}
+{# One assessment's results sheet (GRD-005's honest indication): every open enrollment of its cohort, graded, pending, or honestly marked missing - never read as a zero. The population is the open enrollments the centre could grade now, the same rule the service records under (docs/DECISIONS.md). #}
+{% block content %}
+  <section id="assessment-{{ number }}-results">
+    <p id="assessment_results_heading">{{ heading }}</p>
+    {% if rows %}
+    {% for r in rows %}
+      <div id="sheet-{{ r.number }}">
+        <dl>
+          <div><dt>{{ ui.grading_sheet_row_enrollment }}</dt><dd>{{ r.number }}</dd></div>
+          <div><dt>{{ ui.grading_sheet_row_student }}</dt><dd>{{ r.student }}</dd></div>
+          <div><dt>{{ ui.grading_sheet_row_state }}</dt><dd>{{ r.state }}</dd></div>
+          <div><dt>{{ ui.grading_sheet_row_score }}</dt><dd>{{ r.score }}</dd></div>
+        </dl>
+      </div>
+    {% endfor %}
+    {% else %}
+      <p id="grading_assessment_results_none">{{ none }}</p>
+    {% endif %}
+  </section>
+  <p id="results_back">
+    <a href="{{ back.href }}" data-kind="{{ back.kind }}">{{ back.title }}</a>
+  </p>
+{% endblock %}

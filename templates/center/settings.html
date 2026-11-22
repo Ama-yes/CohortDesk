@@ -1,0 +1,13 @@
+{% extends "center/base.html" %}
+{% block content %}
+  <section id="settings">
+    <p>{{ ui.settings_heading }}</p>
+    <dl>
+      {% for s in settings %}<div id="setting_{{ s.id }}"><dt>{{ s.title }}</dt><dd>{{ s.value }}</dd></div>
+      {% endfor %}
+    </dl>
+  </section>
+  <p id="change_settings">
+    <a href="/o/{{ center.slug }}/center/settings/change/" data-kind="settings_change">{{ ui.settings_change_heading }}</a>
+  </p>
+{% endblock %}

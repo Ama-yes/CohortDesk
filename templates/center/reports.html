@@ -1,0 +1,123 @@
+{% extends "center/base.html" %}
+{# The academic reports of one centre (ACAD-006/REP-003/REP-004): enrollments grouped by their cohort's dates, and cohort capacity. Every row is built from this centre's own records (RULE 6.1); the CSV link carries the same filters. #}
+{% block content %}
+  <section id="reports">
+    <p>{{ ui.reports_heading }}</p>
+    <p id="reports_period_note">{{ ui.reports_period_note }}</p>
+    <section id="report_totals">
+      <dl>
+        {% for t in totals %}<div id="{{ t.id }}"><dt>{{ t.title }}</dt><dd>{{ t.value }}</dd></div>
+        {% endfor %}
+      </dl>
+    </section>
+    <section id="report_enrollments">
+      <p>{{ ui.reports_enrollments_heading }}</p>
+      {% if enrollments %}
+      {% for e in enrollments %}
+        <div id="report-enrollment-{{ e.number }}">
+          <dl>
+            <div><dt>{{ ui.enrollments_number }}</dt><dd>{{ e.number }}</dd></div>
+            <div><dt>{{ ui.field_student_number }}</dt><dd>{{ e.student_number }}</dd></div>
+            <div><dt>{{ ui.field_name }}</dt><dd>{{ e.student_name }}</dd></div>
+            <div><dt>{{ ui.field_cohort_name }}</dt><dd>{{ e.cohort }}</dd></div>
+            <div><dt>{{ ui.field_course }}</dt><dd>{{ e.course }}</dd></div>
+            <div><dt>{{ ui.field_start_date }}</dt><dd>{{ e.start_date }}</dd></div>
+            <div><dt>{{ ui.field_enrolled_at }}</dt><dd>{{ e.enrolled_at }}</dd></div>
+            <div><dt>{{ ui.field_enrollment_status }}</dt><dd>{{ e.status }}</dd></div>
+            <div><dt>{{ ui.field_agreed_fee }}</dt><dd>{{ e.fee }}</dd></div>
+          </dl>
+        </div>
+      {% endfor %}
+      {% else %}
+        <p id="report_enrollments_none">{{ ui.reports_enrollments_none }}</p>
+      {% endif %}
+    </section>
+    <p id="report_csv">
+      <a href="{{ csv_href }}" data-kind="reports_csv">{{ ui.reports_csv }}</a>
+    </p>
+    {% if attendance_totals %}
+    <section id="report_attendance">
+      <p>{{ ui.reports_attendance_heading }}</p>
+      {% if attendance %}
+      {% for a in attendance %}
+        <div id="report-attendance-{{ a.session_number }}-{{ a.student_number }}">
+          <dl>
+            <div><dt>{{ ui.sessions_number }}</dt><dd>{{ a.session_number }}</dd></div>
+            <div><dt>{{ ui.reports_attendance_start }}</dt><dd>{{ a.session_start }}</dd></div>
+            <div><dt>{{ ui.reports_attendance_cohort }}</dt><dd>{{ a.cohort }}</dd></div>
+            <div><dt>{{ ui.reports_attendance_course }}</dt><dd>{{ a.course }}</dd></div>
+            <div><dt>{{ ui.field_student_number }}</dt><dd>{{ a.student_number }}</dd></div>
+            <div><dt>{{ ui.field_name }}</dt><dd>{{ a.name }}</dd></div>
+            <div><dt>{{ ui.reports_attendance_status }}</dt><dd>{{ a.status }}</dd></div>
+            <div><dt>{{ ui.attendance_recorded_at }}</dt><dd>{{ a.recorded }}</dd></div>
+            <div><dt>{{ ui.attendance_status_changed }}</dt><dd>{{ a.changed }}</dd></div>
+            <div><dt>{{ ui.reports_attendance_note }}</dt><dd>{{ a.note }}</dd></div>
+          </dl>
+        </div>
+      {% endfor %}
+      {% else %}
+        <p id="report_attendance_none">{{ ui.reports_attendance_none }}</p>
+      {% endif %}
+    </section>
+    <section id="report_attendance_totals">
+      <dl>
+        {% for t in attendance_totals %}<div id="{{ t.id }}"><dt>{{ t.title }}</dt><dd>{{ t.value }}</dd></div>
+        {% endfor %}
+      </dl>
+    </section>
+    <section id="report_sessions">
+      <p>{{ ui.reports_attendance_sessions }}</p>
+      {% if sessions %}
+      {% for s in sessions %}
+        <div id="report-session-{{ s.number }}">
+          <dl>
+            <div><dt>{{ ui.sessions_number }}</dt><dd>{{ s.number }}</dd></div>
+            <div><dt>{{ ui.reports_attendance_start }}</dt><dd>{{ s.start }}</dd></div>
+            <div><dt>{{ ui.reports_attendance_end }}</dt><dd>{{ s.end }}</dd></div>
+            <div><dt>{{ ui.reports_attendance_cohort }}</dt><dd>{{ s.cohort }}</dd></div>
+            <div><dt>{{ ui.field_cohort_number }}</dt><dd>{{ s.cohort_number }}</dd></div>
+            <div><dt>{{ ui.reports_attendance_course }}</dt><dd>{{ s.course }}</dd></div>
+            <div id="report-session-present-{{ s.number }}"><dt>{{ ui.reports_attendance_present }}</dt><dd>{{ s.present }}</dd></div>
+            <div id="report-session-absent-{{ s.number }}"><dt>{{ ui.reports_attendance_absent }}</dt><dd>{{ s.absent }}</dd></div>
+            <div id="report-session-late-{{ s.number }}"><dt>{{ ui.reports_attendance_late }}</dt><dd>{{ s.late }}</dd></div>
+            <div id="report-session-excused-{{ s.number }}"><dt>{{ ui.reports_attendance_excused }}</dt><dd>{{ s.excused }}</dd></div>
+            <div><dt>{{ ui.reports_attendance_records }}</dt><dd>{{ s.records }}</dd></div>
+          </dl>
+        </div>
+      {% endfor %}
+      {% else %}
+        <p id="report_sessions_none">{{ ui.sessions_none }}</p>
+      {% endif %}
+    </section>
+    <p id="report_attendance_csv">
+      <a href="{{ attendance_csv_href }}" data-kind="attendance_report_csv">{{ ui.reports_attendance_csv }}</a>
+    </p>
+    {% endif %}
+    <section id="report_capacity">
+      <p>{{ ui.reports_capacity_heading }}</p>
+      {% if cohorts %}
+      {% for c in cohorts %}
+        <div id="report-cohort-{{ c.number }}">
+          <dl>
+            <div><dt>{{ ui.field_cohort_name }}</dt><dd>{{ c.name }}</dd></div>
+            <div><dt>{{ ui.field_course }}</dt><dd>{{ c.course }}</dd></div>
+            <div><dt>{{ ui.field_start_date }}</dt><dd>{{ c.start_date }}</dd></div>
+            <div><dt>{{ ui.field_status }}</dt><dd>{{ c.status }}</dd></div>
+            <div><dt>{{ ui.field_capacity }}</dt><dd>{{ c.capacity }}</dd></div>
+            <div><dt>{{ ui.reports_seats_taken }}</dt><dd>{{ c.seats_taken }}</dd></div>
+            <div><dt>{{ ui.reports_places_left }}</dt><dd>{{ c.places_left }}</dd></div>
+            <div><dt>{{ ui.reports_capacity_state }}</dt><dd>{{ c.state }}</dd></div>
+          </dl>
+        </div>
+      {% endfor %}
+      {% else %}
+        <p id="report_capacity_none">{{ ui.reports_capacity_none }}</p>
+      {% endif %}
+    </section>
+    {% if nav.grading %}
+    <p id="report_grading_link">
+      <a href="/o/{{ center.slug }}/center/grading/reports/" data-kind="grading_reports">{{ ui.grading_reports_heading }}</a>
+    </p>
+    {% endif %}
+  </section>
+{% endblock %}

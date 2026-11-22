@@ -1,0 +1,21 @@
+{% extends "center/base.html" %}
+{# The page a tenant centre's people are listed on (AUTH-005/006/007). #}
+{% block content %}
+  <section id="members">
+    <p>{{ ui.members_heading }}</p>
+    {% if members %}
+    {% for m in members %}
+      <div id="person-{{ m.number }}">
+        <p>{{ m.name }}</p>
+        <p>{{ m.role }}</p>
+        <p>{{ m.state }}</p>
+      </div>
+    {% endfor %}
+    {% else %}
+      <p id="members_none">{{ ui.members_none }}</p>
+    {% endif %}
+  </section>
+  <p id="manage_members">
+    <a href="/o/{{ center.slug }}/center/members/manage/" data-kind="members_manage">{{ ui.members_manage_heading }}</a>
+  </p>
+{% endblock %}

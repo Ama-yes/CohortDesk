@@ -1,0 +1,13 @@
+{% extends "center/base.html" %}
+{# One expense at this centre, in full (FIN-013). This page answers only about this centre's own record (FIN-015). #}
+{% block content %}
+  <section id="expense-{{ number }}">
+    <dl id="expense_figures">
+      {% for d in rows %}<div id="{{ d.id }}"><dt>{{ d.title }}</dt><dd>{{ d.value }}</dd></div>
+      {% endfor %}
+    </dl>
+  </section>
+  <p id="expense_back">
+    <a href="{{ back.href }}" data-kind="{{ back.kind }}">{{ back.title }}</a>
+  </p>
+{% endblock %}

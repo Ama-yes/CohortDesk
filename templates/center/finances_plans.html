@@ -1,0 +1,33 @@
+{% extends "center/base.html" %}
+{# This centre's plans of installments, under each fee agreement (FIN-003). The money each plan schedules is read from its installments, never stored (FIN-005). Nothing here reads another centre (RULE 6.1). #}
+{% block content %}
+  <section id="finances_plans">
+    <p>{{ ui.plans_heading }}</p>
+    <p>{{ ui.plans_hint }}</p>
+    {% if rows %}
+    {% for r in rows %}
+      <div id="plans-for-{{ r.code }}">
+        <p>{{ r.agreement }}</p>
+        <p>{{ r.code }}</p>
+        {% for p in r.plans %}
+          <div id="plan-{{ p.id }}">
+            <dl>
+              <div><dt>{{ ui.plan_row_number }}</dt><dd>{{ p.id }}</dd></div>
+              <div><dt>{{ ui.plan_row_name }}</dt><dd>{{ p.name }}</dd></div>
+              <div><dt>{{ ui.plan_row_installments }}</dt><dd>{{ p.installments }}</dd></div>
+              <div><dt>{{ ui.plan_row_scheduled }}</dt><dd>{{ p.scheduled }}</dd></div>
+              <div><dt>{{ ui.plan_row_note }}</dt><dd>{{ p.note }}</dd></div>
+              <div><dt>{{ ui.plan_row_at }}</dt><dd>{{ p.at }}</dd></div>
+            </dl>
+          </div>
+        {% endfor %}
+      </div>
+    {% endfor %}
+    {% else %}
+      <p id="plans_none">{{ none }}</p>
+    {% endif %}
+  </section>
+  <p id="manage_obligations">
+    <a href="/o/{{ center.slug }}/center/finances/obligations/manage/" data-kind="obligations_manage">{{ ui.obligations_manage_heading }}</a>
+  </p>
+{% endblock %}

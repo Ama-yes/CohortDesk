@@ -1,0 +1,21 @@
+{% extends "center/base.html" %}
+{# The centre's grading hub: its own assessments and raw results counted, and the way down to every grading page. Nothing here reads another centre (RULE 6.1). No final grade and no weighted figure is counted anywhere (docs/STATUS.md's deferred list). #}
+{% block content %}
+  <section id="grading">
+    <p>{{ ui.grading_heading }}</p>
+    <p>{{ ui.grading_hint }}</p>
+    <dl id="grading_summary">
+      {% for s in summary %}<div id="{{ s.id }}"><dt>{{ s.title }}</dt><dd>{{ s.value }}</dd></div>
+      {% endfor %}
+    </dl>
+  </section>
+  <p id="grading_assessments_link">
+    <a href="/o/{{ center.slug }}/center/grading/assessments/" data-kind="assessments">{{ ui.grading_assessments_heading }}</a>
+  </p>
+  <p id="grading_results_link">
+    <a href="/o/{{ center.slug }}/center/grading/results/" data-kind="results">{{ ui.grading_results_heading }}</a>
+  </p>
+  <p id="grading_reports_link">
+    <a href="/o/{{ center.slug }}/center/grading/reports/" data-kind="reports">{{ ui.grading_reports_heading }}</a>
+  </p>
+{% endblock %}

@@ -1,0 +1,64 @@
+<!doctype html>
+{# The shell every page is built from (RULE 6.7): a person's own language is set on the <html> element itself, so the whole page reads the right way when that language reads right to left. #}
+{% load static %}
+<html dir="{{ ui.dir }}" lang="{{ ui.code }}">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>{% block title %}{{ ui.app_name }}{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/ui.css' %}">
+  </head>
+  <body>
+    <header id="brand">
+      <a href="/"><img src="{% static 'img/logo.svg' %}" alt="{{ ui.app_name }}"></a>
+      <p>{{ ui.app_name }}</p>
+      {% if signed_in %}<a id="sign_out" href="/accounts/sign-out/" data-kind="accounts.sign-out">{{ ui.sign_out }}</a>{% endif %}
+    </header>
+    {% if note %}
+      {# What happened is shown on the page the person is on, never as a page of its own (RULE 6.3). #}
+      <section id="note">
+        <p>{{ note_kind }}</p>
+        <p>{{ note }}</p>
+      </section>
+    {% endif %}
+    <nav id="bar">
+      {% block bar %}
+        <p id="project_pages">
+          {% if signed_in %}
+            <a href="/accounts/choose/" data-kind="accounts.choose">{{ ui.choose_center }}</a>
+          {% else %}
+            <a href="/accounts/sign-in/" data-kind="accounts.sign-in">{{ ui.sign_in }}</a>
+          {% endif %}
+          {% if admin_enabled %}<a href="/admin/" data-kind="admin">{{ ui.admin }}</a>{% endif %}
+        </p>
+      {% endblock %}
+    </nav>
+    <section id="page">{% block content %}{% endblock %}</section>
+    {% block form %}
+      {% if form %}
+        {# A form is always on the page the person is on (RULE 6.3). #}
+        <form id="{{ form.id }}" method="{{ form.method }}" action="{{ form.action }}">
+          {% for f in form.fields %}
+            <label for="{{ form.id }}.{{ f.id }}">{{ f.title }}</label>
+            {% if f.options %}
+              <select name="{{ f.id }}" id="{{ form.id }}.{{ f.id }}"{% if f.multiple %} multiple{% endif %}>
+                {% for o in f.options %}<option value="{{ o.value }}"{% if f.multiple %}{% if o.value in f.current %} selected{% endif %}{% else %}{% if o.value == f.current %} selected{% endif %}{% endif %}>{{ o.label }}</option>
+                {% endfor %}
+              </select>
+            {% else %}
+              {% if f.type == "password" %}
+                <input type="{{ f.type }}" name="{{ f.id }}" id="{{ form.id }}.{{ f.id }}">
+              {% else %}
+                <input type="{{ f.type }}" name="{{ f.id }}" id="{{ form.id }}.{{ f.id }}" value="{{ f.value }}">
+              {% endif %}
+            {% endif %}
+          {% endfor %}
+          {# A form with no submit control cannot be sent from a browser: with two or more fields, Enter alone never submits. Found by browser smoke test; the label is the form's own, from the glossary. #}
+          <button type="submit">{{ form.submit|default:ui.action_save }}</button>
+          {# A GET form carries no state-changing request, so it must not put the CSRF token in the query string (found by the phase 3C browser pass). #}
+          {% if form.method != "get" %}{% csrf_token %}{% endif %}
+        </form>
+      {% endif %}
+    {% endblock %}
+  </body>
+</html>

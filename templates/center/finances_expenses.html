@@ -1,0 +1,30 @@
+{% extends "center/base.html" %}
+{# This centre's expenses outside the fee money (FIN-013). Nothing here reads another centre (RULE 6.1). #}
+{% block content %}
+  <section id="finances_expenses">
+    <p>{{ ui.expenses_heading }}</p>
+    <p>{{ ui.expenses_hint }}</p>
+    {% if rows %}
+    {% for r in rows %}
+      <div id="expense-{{ r.id }}">
+        <dl>
+          <div><dt>{{ ui.expense_row_number }}</dt><dd><a href="/o/{{ center.slug }}/center/finances/expenses/{{ r.id }}/" data-kind="expense">{{ r.id }}</a></dd></div>
+          <div><dt>{{ ui.expense_row_category }}</dt><dd>{{ r.category }}</dd></div>
+          <div><dt>{{ ui.expense_row_amount }}</dt><dd>{{ r.amount }}</dd></div>
+          <div><dt>{{ ui.expense_row_date }}</dt><dd>{{ r.date }}</dd></div>
+          <div><dt>{{ ui.expense_row_payee }}</dt><dd>{{ r.payee }}</dd></div>
+          <div><dt>{{ ui.expense_row_description }}</dt><dd>{{ r.description }}</dd></div>
+          <div><dt>{{ ui.expense_row_attachment }}</dt><dd>{{ r.attachment }}</dd></div>
+          <div><dt>{{ ui.expense_row_status }}</dt><dd>{{ r.status }}</dd></div>
+          <div><dt>{{ ui.expense_row_at }}</dt><dd>{{ r.at }}</dd></div>
+        </dl>
+      </div>
+    {% endfor %}
+    {% else %}
+      <p id="expenses_none">{{ none }}</p>
+    {% endif %}
+  </section>
+  <p id="manage_expenses">
+    <a href="/o/{{ center.slug }}/center/finances/expenses/manage/" data-kind="expenses_manage">{{ ui.expenses_manage_heading }}</a>
+  </p>
+{% endblock %}

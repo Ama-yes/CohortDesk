@@ -1,0 +1,17 @@
+{% extends "center/base.html" %}
+{# The page a room is made, changed or archived on (SCH-001). One action here. The form is on this page, and after the attempt the person stays on this page and sees what was not accepted and why (RULE 6.3). #}
+{% block content %}
+  <section id="rooms_manage">
+    <p>{{ ui.rooms_manage_heading }}</p>
+    <p id="rooms_manage_intro">{{ notice }}</p>
+    <dl>
+      {% for f in fields %}
+        <div id="{{ f.id }}"><dt>{{ f.title }}</dt><dd>{{ f.value }}</dd></div>
+        {% if f.problem %}<p id="{{ f.id }}_problem">{{ f.problem }}</p>{% endif %}
+      {% endfor %}
+    </dl>
+  </section>
+  <p id="list_rooms">
+    <a href="/o/{{ center.slug }}/center/rooms/" data-kind="rooms">{{ ui.rooms_heading }}</a>
+  </p>
+{% endblock %}

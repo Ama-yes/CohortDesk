@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}{{ ui.app_name }}{% endblock %}
+{% block content %}
+  <div id="home">
+    <p id="start">{% if signed_in %}{{ ui.you_are_signed_in }}{% else %}{{ ui.welcome }}{% endif %}</p>
+  </div>
+{% endblock %}

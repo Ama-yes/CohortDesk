@@ -1,0 +1,31 @@
+{% extends "center/base.html" %}
+{# One adjustment at this centre, in full (FIN-009): what was put right, and the audit rows that recorded it. This page answers only about this centre's own record (FIN-015). #}
+{% block content %}
+  <section id="adjustment-{{ number }}">
+    <dl id="adjustment_figures">
+      {% for d in rows %}<div id="{{ d.id }}"><dt>{{ d.title }}</dt><dd>{{ d.value }}</dd></div>
+      {% endfor %}
+    </dl>
+  </section>
+  <section id="adjustment_audit">
+    <p id="adjustment_audit_heading">{{ ui.audit_heading }}</p>
+    {% if audit %}
+    {% for a in audit %}
+      <div id="adjustment-audit-{{ a.id }}">
+        <dl>
+          <div><dt>{{ ui.audit_row_number }}</dt><dd>{{ a.id }}</dd></div>
+          <div><dt>{{ ui.audit_row_action }}</dt><dd>{{ a.action }}</dd></div>
+          <div><dt>{{ ui.audit_row_records }}</dt><dd>{{ a.records }}</dd></div>
+          <div><dt>{{ ui.audit_row_actor }}</dt><dd>{{ a.actor }}</dd></div>
+          <div><dt>{{ ui.audit_row_at }}</dt><dd>{{ a.at }}</dd></div>
+        </dl>
+      </div>
+    {% endfor %}
+    {% else %}
+      <p id="audit_none">{{ audit_none }}</p>
+    {% endif %}
+  </section>
+  <p id="adjustment_back">
+    <a href="{{ back.href }}" data-kind="{{ back.kind }}">{{ back.title }}</a>
+  </p>
+{% endblock %}

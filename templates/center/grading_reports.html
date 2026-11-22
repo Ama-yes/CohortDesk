@@ -1,0 +1,33 @@
+{% extends "center/base.html" %}
+{# The centre's grading report (REP-003/REP-005/REP-006/REP-007): its assessments grouped per cohort with their raw figures - recorded, pending and missing - and no final grade, no pass mark and no weighted figure anywhere (docs/STATUS.md's deferred list). Nothing here reads another centre (RULE 6.1). #}
+{% block content %}
+  <section id="grading_reports">
+    <p>{{ ui.grading_reports_heading }}</p>
+    <p>{{ ui.grading_reports_hint }}</p>
+    {% if groups %}
+    {% for g in groups %}
+      <section id="report-cohort-{{ g.pk }}">
+        <p id="report-cohort-heading-{{ g.pk }}">{{ g.cohort }}</p>
+        {% for r in g.rows %}
+          <div id="grade-{{ r.number }}">
+            <dl>
+              <div><dt>{{ ui.grading_row_number }}</dt><dd>{{ r.number }}</dd></div>
+              <div><dt>{{ ui.grading_row_title }}</dt><dd>{{ r.title }}</dd></div>
+              <div><dt>{{ ui.grading_row_max }}</dt><dd>{{ r.max }}</dd></div>
+              <div><dt>{{ ui.grading_row_recorded }}</dt><dd>{{ r.recorded }}</dd></div>
+              <div><dt>{{ ui.grading_row_pending }}</dt><dd>{{ r.pending }}</dd></div>
+              <div><dt>{{ ui.grading_row_missing }}</dt><dd>{{ r.missing }}</dd></div>
+            </dl>
+            <a href="/o/{{ center.slug }}/center/grading/assessments/{{ r.number }}/results/" data-kind="assessment.results">{{ r.number }}</a>
+          </div>
+        {% endfor %}
+      </section>
+    {% endfor %}
+    {% else %}
+      <p id="grading_reports_none">{{ none }}</p>
+    {% endif %}
+  </section>
+  <p id="back_to_grading">
+    <a href="/o/{{ center.slug }}/center/grading/" data-kind="grading">{{ ui.grading_heading }}</a>
+  </p>
+{% endblock %}

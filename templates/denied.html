@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}{{ ui.denied_title }}{% endblock %}
+{% block content %}
+  <div id="home">
+    {% block problem %}<p id="denied">{{ ui.denied_detail }}</p>{% endblock %}
+  </div>
+{% endblock %}

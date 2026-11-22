@@ -1,0 +1,77 @@
+{% extends "center/base.html" %}
+{# One session's attendance register (ATT-001/ATT-006/ATT-008). It names who may be recorded - the same eligibility rule the service answers from - then the records made and the corrections of this session. An instructor is answered this centre's own not-found page for a session outside the cohorts they teach, exactly as if it were not theirs. #}
+{% block content %}
+  <section id="attendance_session">
+    <p id="attendance_session_heading">{{ heading }}</p>
+    <div id="attendance-session-{{ number }}">
+      <p>{{ number }}</p>
+      <p>{{ cohort }}</p>
+      <p>{{ course }}</p>
+      <p>{{ start }}</p>
+      <p>{{ end }}</p>
+      <p>{{ note }}</p>
+    </div>
+    <section id="attendance_session_counts">
+      <dl>
+        {% for c in counts %}<div id="{{ c.id }}"><dt>{{ c.title }}</dt><dd>{{ c.value }}</dd></div>
+        {% endfor %}
+      </dl>
+    </section>
+    <section id="attendance_session_records">
+      <p>{{ ui.attendance_session_records_heading }}</p>
+      {% if records %}
+      {% for a in records %}
+        <div id="attendance-session-record-{{ a.student_number }}">
+          <p>{{ a.student_number }}</p>
+          <p>{{ a.name }}</p>
+          <p>{{ a.status }}</p>
+          <p>{{ a.recorded }}</p>
+          <p>{{ a.changed }}</p>
+          <p>{{ a.note }}</p>
+        </div>
+      {% endfor %}
+      {% else %}
+        <p id="attendance_session_records_none">{{ ui.attendance_session_records_none }}</p>
+      {% endif %}
+    </section>
+    <section id="attendance_session_marked">
+      <p>{{ ui.attendance_session_students }}</p>
+      {% if students %}
+      {% for m in students %}
+        <div id="attendance-session-student-{{ m.student_number }}">
+          <p>{{ m.student_number }}</p>
+          <p>{{ m.name }}</p>
+        </div>
+      {% endfor %}
+      {% else %}
+        <p id="attendance_session_no_students">{{ ui.attendance_session_no_students }}</p>
+      {% endif %}
+    </section>
+    <section id="attendance_session_corrections">
+      <p>{{ ui.attendance_session_corrections_heading }}</p>
+      {% if audit %}
+      {% for c in audit %}
+        <div id="attendance-session-correction-{{ c.student_number }}-{{ c.at }}">
+          <p>{{ c.student_number }}</p>
+          <p>{{ c.name }}</p>
+          <p>{{ c.previous }}</p>
+          <p>{{ c.new }}</p>
+          <p>{{ c.actor }}</p>
+          <p>{{ c.at }}</p>
+        </div>
+      {% endfor %}
+      {% else %}
+        <p id="attendance_session_corrections_none">{{ ui.attendance_session_corrections_none }}</p>
+      {% endif %}
+    </section>
+  </section>
+  <p id="manage_attendance">
+    <a href="/o/{{ center.slug }}/center/attendance/manage/" data-kind="attendance_manage">{{ ui.attendance_manage_heading }}</a>
+  </p>
+  <p id="attendance_session_csv">
+    <a href="/o/{{ center.slug }}/center/attendance/{{ number }}/register.csv" data-kind="attendance_register_csv">{{ ui.attendance_register_csv }}</a>
+  </p>
+  <p id="list_attendance">
+    <a href="/o/{{ center.slug }}/center/attendance/" data-kind="attendance">{{ ui.attendance_heading }}</a>
+  </p>
+{% endblock %}

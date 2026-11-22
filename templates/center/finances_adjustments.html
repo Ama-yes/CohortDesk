@@ -1,0 +1,29 @@
+{% extends "center/base.html" %}
+{# This centre's adjustments: discounts, waivers, corrections, refunds, reversals (FIN-009/FIN-012). Nothing here reads another centre (RULE 6.1). #}
+{% block content %}
+  <section id="finances_adjustments">
+    <p>{{ ui.adjustments_heading }}</p>
+    <p>{{ ui.adjustments_hint }}</p>
+    {% if rows %}
+    {% for r in rows %}
+      <div id="adjustment-{{ r.id }}">
+        <dl>
+          <div><dt>{{ ui.adjustment_row_number }}</dt><dd><a href="/o/{{ center.slug }}/center/finances/adjustments/{{ r.id }}/" data-kind="adjustment">{{ r.id }}</a></dd></div>
+          <div><dt>{{ ui.adjustment_row_agreement }}</dt><dd>{{ r.agreement }}</dd></div>
+          <div><dt>{{ ui.adjustment_row_kind }}</dt><dd>{{ r.kind }}</dd></div>
+          <div><dt>{{ ui.adjustment_row_amount }}</dt><dd>{{ r.amount }}</dd></div>
+          <div><dt>{{ ui.adjustment_row_payment }}</dt><dd>{{ r.payment }}</dd></div>
+          <div><dt>{{ ui.adjustment_row_reason }}</dt><dd>{{ r.reason }}</dd></div>
+          <div><dt>{{ ui.adjustment_row_actor }}</dt><dd>{{ r.actor }}</dd></div>
+          <div><dt>{{ ui.adjustment_row_at }}</dt><dd>{{ r.at }}</dd></div>
+        </dl>
+      </div>
+    {% endfor %}
+    {% else %}
+      <p id="adjustments_none">{{ none }}</p>
+    {% endif %}
+  </section>
+  <p id="manage_adjustments">
+    <a href="/o/{{ center.slug }}/center/finances/adjustments/manage/" data-kind="adjustments_manage">{{ ui.adjustments_manage_heading }}</a>
+  </p>
+{% endblock %}

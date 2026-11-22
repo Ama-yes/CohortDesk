@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - opencode/cohortdesk-autonomous-development
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  checks-and-tests:
+    name: Django checks and test suite (SQLite)
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    env:
+      # Not a secret: settings.py refuses to start without a value, and the
+      # test database is in-memory SQLite. CI never touches a real database.
+      COHORTDESK_SECRET_KEY: ci-only-not-a-real-secret-key
+      COHORTDESK_ENVIRONMENT: development
+      COHORTDESK_FORCE_SSL_REDIRECT: "false"
+      PYTHONUNBUFFERED: "1"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.14
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Django system checks
+        run: python manage.py check
+
+      - name: Migration consistency
+        run: python manage.py makemigrations --check --dry-run
+
+      - name: Test suite
+        run: python manage.py test --verbosity 2
