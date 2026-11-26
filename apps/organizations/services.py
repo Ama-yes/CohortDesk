@@ -105,6 +105,14 @@ def add_person(user, organization, person, role):
         return False, ["role"]
     if Members.objects.filter(user=person, organization=organization).exists():
         return False, ["exists"]
+    # The form offers this centre's own people plus accounts of no centre
+    # (D105); a hidden option is not authorization, so the same rule holds
+    # here: an account attached to another centre is not this centre's to
+    # take. The multi-centre invitation question is open item 74.
+    if Members.objects.filter(user=person).exclude(
+        organization=organization
+    ).exists():
+        return False, ["member"]
     Members.objects.create(user=person, organization=organization, role=role)
     return True, []
 

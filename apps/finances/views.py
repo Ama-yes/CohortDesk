@@ -30,16 +30,16 @@ FIN-010's summaries and FIN-007's receipts are built here; FIN-002..FIN-011's
 recording happens on the manage pages, whose forms share one definition with
 the rows they show (the manage-page pattern every other area uses)."""
 
-import csv
+import secrets
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
-import secrets
 
 from django.core.exceptions import PermissionDenied
 from django.db.models import Q
 from django.http import HttpResponse
 from django.utils import timezone
 
+from apps.csv_safety import csv_writer
 from apps.organizations.permissions import role_has_permission
 from apps.organizations.views import READ_METHODS, here
 from apps.pages import center_ui, page
@@ -127,6 +127,9 @@ OBLIGATION_FIELD_UI = {
 }
 
 PAYMENT_ACTIONS = ("record", "reverse")
+# FinanceSubmission.token's stored width; a longer typed value is refused on
+# the page instead of reaching full_clean() inside the posting transaction.
+SUBMISSION_TOKEN_MAX = 80
 PAYMENT_ACTION_UI = {
     "record": "payment_action_record",
     "reverse": "payment_action_reverse",
@@ -291,6 +294,10 @@ PAYMENT_PROBLEM_UI = {
     "already_reversed": ("payment_payment", "payment_already_reversed"),
     "over_taken": ("payment_amount", "over_taken"),
     "payment_token_required": ("payment_token", "payment_token_required"),
+    "token_used_for_other_action": (
+        "payment_token",
+        "payment_token_used_other_action",
+    ),
 }
 ADJUSTMENT_PROBLEM_UI = {
     "obligation_not_found": ("adjustment_target", "not_found_obligation"),
@@ -1419,16 +1426,33 @@ def payments_manage(request, slug):
         if not token:
             problems["payment_token"] = ui["payment_token_required"]
             bad_input = True
+        elif len(token) > SUBMISSION_TOKEN_MAX:
+            # FinanceSubmission.token is 80 characters (D86); a longer typed
+            # value must be answered on the page, not raised by full_clean()
+            # inside the posting transaction as a server error.
+            problems["payment_token"] = ui["field_invalid"].format(token)
+            bad_input = True
         if sent["payment_confirm"] != "yes":
             problems["payment_confirm"] = ui["payment_confirmation_note"]
             bad_input = True
         replay = _submission_row(center, request.user, token) if token else None
         if replay is not None:
-            saved, field_problems, codes = (
-                replay.payment or replay.adjustment,
-                [],
-                ["duplicate_submission"],
-            )
+            wanted = replay.payment if action == "record" else replay.adjustment
+            other = replay.adjustment if action == "record" else replay.payment
+            if other is not None and wanted is None:
+                # The submission row D86 keys on (centre, person, token)
+                # carries no action dimension: a code already consumed by
+                # the other posting action names no outcome for this one,
+                # so nothing here may answer as though this posting had
+                # already posted. The posting is refused and the page's
+                # fresh code must be used.
+                saved, field_problems, codes = None, [], [
+                    "token_used_for_other_action",
+                ]
+            else:
+                saved, field_problems, codes = wanted or other, [], [
+                    "duplicate_submission",
+                ]
         elif bad_input:
             saved, field_problems, codes = None, [], []
         else:
@@ -1476,9 +1500,13 @@ def payments_manage(request, slug):
                 note, kind = ui["finances_rejected"], "rejected"
             else:
                 note, kind = ui["nothing_changed"], "unchanged"
-    if "duplicate_submission" in codes or (
-        saved is not None
-        and not any(code in PAYMENT_RETRY_UI for code in codes)
+    if (
+        "duplicate_submission" in codes
+        or "token_used_for_other_action" in codes
+        or (
+            saved is not None
+            and not any(code in PAYMENT_RETRY_UI for code in codes)
+        )
     ):
         sent = dict(sent, payment_token=secrets.token_hex(16))
     return page(
@@ -2110,8 +2138,8 @@ def receipt_csv(request, slug, number):
             center.slug, receipt.number
         )
     )
-    writer = csv.writer(response)
-    writer.writerow(
+    write = csv_writer(response)
+    write(
         [
             ui["receipt_row_center"],
             ui["receipt_row_number"],
@@ -2123,7 +2151,7 @@ def receipt_csv(request, slug, number):
             ui["receipt_row_date"],
         ]
     )
-    writer.writerow(
+    write(
         [
             center.name,
             str(receipt.number),

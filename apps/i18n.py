@@ -18,21 +18,21 @@ keys.
 Status of the other columns (audited by script against the dicts below, not by
 eye; each figure counts one column's own keys, and a caller receives the
 English keys merged under the chosen column):
-- English carries 896 keys: the 478 of the phase 3D cut, the 65 new keys
+- English carries 897 keys: the 478 of the phase 3D cut, the 65 new keys
   the phase 3E rooms, schedules and cancellation copy added, the 208 the
   phase 3F finance slice added, the 35 row labels the finance pages' own
-  templates added at the same time, and the 110 the phase 3G grading
-  slice added.
-- "fr" is NOT translated yet. It names 75 of the 896 English keys, and those
-  75 are only the base rows: the other 821 keys are absent there and fall back
+  templates added at the same time, the 110 the phase 3G grading
+  slice added, and the 1 the security hardening pass added.
+- "fr" is NOT translated yet. It names 75 of the 897 English keys, and those
+  75 are only the base rows: the other 822 keys are absent there and fall back
   to English.
   Two of those
   75 differ from English ("code" = "fr" and a partly-French tagline); the other
   73 are byte-identical to the English source. A center set to fr therefore
   displays English copy. Filling that column is the i18n feature, not this
   slice; see docs/OPEN_QUESTIONS.md.
-- "ar" names 135 of the 896 keys: the same 75 base rows plus the 60 the students
-  feature added. The other 761 keys are not named there at all and fall back
+- "ar" names 135 of the 897 keys: the same 75 base rows plus the 60 the students
+  feature added. The other 762 keys are not named there at all and fall back
   to English.
   None of the 135 is real Arabic wording: 130 of them are machine transliterated
   with Latin letters, four (the tagline and the three sign rows) mix one or two
@@ -816,6 +816,7 @@ UI_STRINGS = {
         "payment_status_reversed": "Reversed",
         "payment_replayed": "This submission was already posted here; the page shows the payment it posted and posted nothing new.",
         "payment_token_required": "This page's own submission code is required to post a payment.",
+        "payment_token_used_other_action": "That submission code was already used for the other payment action here, so nothing was saved. This page now has a fresh code; use it to go on.",
         "payments_heading": "Payments of this center",
         "payments_hint": "Each payment, the money it moved, and what became of it.",
         "payments_none": "No payment has been posted at this center yet.",

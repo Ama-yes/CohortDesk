@@ -176,4 +176,17 @@ class Application(models.Model):
             self.note = str(self.note).strip()
         if "status" not in excluded:
             self.status = str(self.status).strip().lower()
+        if "converted_student" not in excluded:
+            linked = self.converted_student
+            if (
+                linked is not None
+                and linked.organization_id != self.organization_id
+            ):
+                raise ValidationError(
+                    {
+                        "converted_student": (
+                            "That student belongs to another center."
+                        )
+                    }
+                )
         super().clean_fields(exclude=excluded)

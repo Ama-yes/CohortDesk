@@ -24,6 +24,7 @@ from apps.academics.models import Cohort
 from apps.academics.services import create_cohort, enroll_student, set_cohort_status
 from apps.academics.statuses import COHORT_CANCELLED
 from apps.students.models import Student
+from apps.test_csv_safety import FORMULA_CELLS, exported_rows
 
 from django.db.models import ProtectedError
 
@@ -241,6 +242,39 @@ class HubAndRoles(GradingAccessFixture):
         )
         self.assertEqual(answer.status_code, 200)
         self.assertIn(ui["grading_state_missing"], answer.content.decode())
+
+    def test_formula_looking_titles_are_exported_as_data(self):
+        """CSV injection: every dangerous prefix in a title is text."""
+        self.show(self.owner)
+        for value in FORMULA_CELLS:
+            Assessment.objects.filter(pk=self.assessment.pk).update(title=value)
+            rows = exported_rows(
+                self.client.get(self.alpha_at("reports/cohort.csv"))
+            )
+            row = next(
+                item
+                for item in rows[1:]
+                if item[2] == str(self.assessment.pk)
+            )
+            self.assertEqual(row[3], "'" + value)
+
+    def test_formula_looking_student_text_in_results_is_data(self):
+        """CSV injection: the results file's student cell is data only."""
+        self.show(self.owner)
+        url = self.alpha_at(
+            f"assessments/{self.assessment_two.pk}/results.csv"
+        )
+        for value in FORMULA_CELLS:
+            Student.objects.filter(pk=self.learner_two.pk).update(
+                student_number=value
+            )
+            rows = exported_rows(self.client.get(url))
+            row = next(
+                item
+                for item in rows[2:]
+                if item[2] == str(self.enrollment_two.pk)
+            )
+            self.assertEqual(row[3], f"'{value} (Another Learner)")
 
 
 class CrossCenterSilence(GradingAccessFixture):
@@ -504,6 +538,30 @@ class ManagePageMarkings(GradingAccessFixture):
         )
         self.assertEqual(
             Result.objects.filter(organization=self.alpha).count(), 1
+        )
+
+    def test_an_oversized_reason_is_marked_not_a_server_error(self):
+        """A reason wider than the audit row's field is refused on the page."""
+        reason = "r" * 500
+        answer = self.manage_post(
+            self.owner,
+            "results/manage/",
+            {
+                "result_action": "record",
+                "result_assessment": str(self.assessment.pk),
+                "result_enrollment": str(self.enrollment.pk),
+                "result_score": "10",
+                "result_reason": reason,
+            },
+        )
+        self.assertIn('id="result_reason_problem"', answer.content.decode())
+        self.assertEqual(
+            Result.objects.filter(organization=self.alpha).count(), 1
+        )
+        self.assertFalse(
+            GradeAuditEvent.objects.filter(
+                organization=self.alpha, reason=reason
+            ).exists()
         )
 
     def test_an_empty_record_score_stays_pending_and_never_a_zero(self):

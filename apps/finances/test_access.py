@@ -30,6 +30,7 @@ from apps.organizations.roles import (
 from apps.students.models import Student
 from apps.students.statuses import STATUS_ACTIVE
 from apps.academics.services import create_course, create_cohort, enroll_student
+from apps.test_csv_safety import FORMULA_CELLS, exported_rows
 
 from .models import (
     Allocation,
@@ -334,6 +335,17 @@ class TwoCenters(TestCase):
         self.assertNotIn("Beta Learner", self.body(answer))
         self.assertNotIn("500.00", self.body(answer))
 
+    def test_formula_looking_student_text_is_exported_as_data(self):
+        """CSV injection: every dangerous prefix in the student cell is text."""
+        self.client.force_login(self.money)
+        for value in FORMULA_CELLS:
+            Student.objects.filter(pk=self.alpha_student.pk).update(
+                student_number=value
+            )
+            rows = exported_rows(self.client.get(self.receipt_csv_url(1)))
+            self.assertEqual(len(rows), 2)
+            self.assertEqual(rows[1][4], f"'{value} (Alpha Learner)")
+
     def test_other_centres_receipt_file_never_downloads_here(self):
         self.client.force_login(self.alpha_owner)
         answer = self.client.get(
@@ -469,6 +481,33 @@ class PaymentSubmissionTests(TwoCenters):
         )
         self.assertEqual(FinanceSubmission.objects.count(), 0)
 
+    def test_an_oversized_submission_code_is_marked_not_a_server_error(self):
+        """A code wider than the stored token is a field problem, no posting."""
+        self.client.force_login(self.money)
+        token = "t" * 200
+        answer = self.post(
+            self.alpha,
+            {
+                "payment_action": "record",
+                "payment_target": str(self.obligation.pk),
+                "payment_amount": "400.00",
+                "payment_method": METHOD_CASH,
+                "payment_allocations": f"{self.second.pk}=400.00",
+                "payment_token": token,
+                "payment_confirm": "yes",
+            },
+        )
+        self.assertIn('id="payment_token_problem"', answer.content.decode())
+        self.assertEqual(
+            Payment.objects.filter(organization=self.alpha).count(), 1
+        )
+        self.assertEqual(
+            FinanceSubmission.objects.filter(
+                organization=self.alpha, token=token
+            ).count(),
+            0,
+        )
+
     def test_same_submission_code_posts_the_payment_once(self):
         """The replay of a taken code shows the saved payment, not new money."""
         self.client.force_login(self.money)
@@ -518,6 +557,41 @@ class PaymentSubmissionTests(TwoCenters):
                 action=AUDIT_PAYMENT_POSTED,
             ).count(),
             1,
+        )
+
+    def test_record_code_cannot_answer_a_reversal(self):
+        """The URL boundary refuses a cross-action replay and posts nothing."""
+        self.client.force_login(self.money)
+        fields = {
+            "payment_action": "record",
+            "payment_target": str(self.obligation.pk),
+            "payment_amount": "400.00",
+            "payment_method": METHOD_CASH,
+            "payment_allocations": f"{self.second.pk}=400.00",
+            "payment_token": "tok-cross-action",
+            "payment_confirm": "yes",
+        }
+        self.post(self.alpha, fields)
+        answer = self.post(
+            self.alpha,
+            {
+                "payment_action": "reverse",
+                "payment_payment": str(self.payment.pk),
+                "payment_amount": "200.00",
+                "payment_payment_reason": "cross-action replay",
+                "payment_token": "tok-cross-action",
+                "payment_confirm": "yes",
+            },
+        )
+        self.assertIn(
+            "used for the other payment action", self.body(answer)
+        )
+        self.assertFalse(
+            FinancialAdjustment.objects.filter(
+                organization=self.alpha,
+                payment=self.payment,
+                kind=ADJ_REVERSAL,
+            ).exists()
         )
 
     def test_fresh_submission_code_posts_the_next_payment(self):

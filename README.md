@@ -205,8 +205,10 @@ links.
 - **Navigation is presentation.** The shell shows only permitted links, but the
   address-level checks are independent and separately tested.
 - **Instructor narrowing.** Instructors are scoped to the cohorts assigned to
-  their staff record for attendance and grading — enforced in the service and
-  view layer, not the template.
+  their staff record for attendance, grading and student profiles — enforced in
+  the service and view layer, not the rendered list. A profile outside that scope
+  answers the centre's own 404; enrollment status (active, completed, withdrawn,
+  cancelled) never removes that historical access.
 
 ### Role matrix (summary)
 
@@ -214,7 +216,7 @@ links.
 | --- | :-: | :-: | :-: | :-: | :-: | :-: |
 | Organization settings | ✓ | ✓ | | | | |
 | Members and roles | ✓ | ✓ | | | | |
-| Students view | ✓ | ✓ | ✓ | ✓ | ✓ | |
+| Students view | ✓ | ✓ | ✓ | ✓ | ✓ (scoped) | |
 | Students manage | ✓ | ✓ | ✓ | | | |
 | Admissions | ✓ | ✓ | ✓ | | | |
 | Courses / programs | ✓ | ✓ | ✓ (view) | ✓ | ✓ (view) | |
@@ -400,7 +402,7 @@ Run the suite:
 python manage.py test
 ```
 
-**Verified local baseline:** `Ran 730 tests in 1524.349s` → `OK (skipped=1)`.
+**Verified local baseline:** `Ran 789 tests in 2520.559s` → `OK (skipped=1)`.
 
 The single skip is a PostgreSQL-only race check in
 `apps/finances/test_model_rules.py`; on SQLite `select_for_update` isolates the
@@ -478,7 +480,7 @@ These are deliberate, documented boundaries — not hidden gaps.
   student import, preview or rollback.
 - **No notifications.** NOT-001…004 are not implemented; there is no in-app
   action centre, threshold configuration or template library.
-- **Localization is incomplete.** `apps/i18n.py` has 896 English keys, 75 French
+- **Localization is incomplete.** `apps/i18n.py` has 897 English keys, 75 French
   and 135 Arabic entries. Missing keys fall back to English. No French or
   Arabic translation has been fabricated or machine-approved.
 - **Visual design is hand-built, not frameworked.** The 2026-11 UI pass made
@@ -498,17 +500,23 @@ These are deliberate, documented boundaries — not hidden gaps.
   gitignored and `.env.example` contains placeholders only.
 - **Tenant isolation.** Every tenant read and write is scoped to the caller's
   organization server-side. Cross-tenant identifiers resolve to a same-centre
-  404, never to foreign data.
+  404, never to foreign data. Membership writes are centre-scoped: an account
+  already attached to another centre cannot be invited into this one.
 - **Authorization.** 51 permission codes are declared centrally. Unknown codes
   fail closed. Denial is a 403 page, not a redirect or a hidden control.
 - **CSRF.** All state-changing forms carry `{% csrf_token %}`; the middleware
   is enabled and tested.
 - **Money handling.** Amounts are `Decimal`, never floats. Payments allocate
   exactly; reversals take back cumulatively; a submission token prevents
-  double-posting.
+  double-posting. Status moves (open→paid, payment→reversed) are revalidated
+  from the locked rows, and submission tokens are length-bounded before storage.
 - **Audit.** Attendance corrections, payment creation/reversal, fee
   adjustments, grade changes, assessments and membership changes write audit
   records that ordinary users cannot edit.
+- **CSV safety.** Every export writes cells through one shared writer that
+  neutralises spreadsheet formula injection: text starting with `=`, `+`, `-`,
+  `@`, a tab or a line break is written as spreadsheet text; ordinary decimal
+  numbers, including negative amounts, are left untouched.
 
 ### Development-only caveats
 
@@ -524,9 +532,9 @@ These are deliberate, documented boundaries — not hidden gaps.
 
 ## 15. Repository status and license
 
-- This repository is a **curated public snapshot**, published as a single
-  initial commit. The private development history is not published, and this is
-  not a tagged release.
+- This repository is a **curated public snapshot** of the development work:
+  curated commits only. The private development history is not published, and
+  this is not a tagged release.
 - **No license file is present.** The code is therefore unlicensed: it remains
   the copyright holder's work and may not be reused without permission. The
   owner must choose a license before reuse rights can be granted.
@@ -544,13 +552,12 @@ Every change is expected to:
 5. be verified in a browser when it changes a page.
 
 CI runs system checks, migration consistency and the test suite on SQLite —
-see `.github/workflows/ci.yml`. The full local suite takes roughly 28 minutes,
+see `.github/workflows/ci.yml`. The full local suite takes roughly 42 minutes,
 so CI is configured as an honest verification job rather than a fast gate.
 
-Every completed full-suite run before this snapshot was published finished
-green (`completed`, conclusion `success`). The badge above points at `main`;
-the first run in this repository starts with the initial commit, so it is not
-yet recorded here.
+Full-suite runs in this repository are tracked in its own Actions history;
+the run started by each curated commit is recorded there. The badge above
+points at `main`.
 
 ---
 

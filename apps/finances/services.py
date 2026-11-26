@@ -595,6 +595,14 @@ def post_payment(user, organization, obligation_number, amount, method,
         if token:
             winner = _submission_row(organization, user, token)
             if winner is not None:
+                if winner.payment is None and winner.adjustment is not None:
+                    # The submission row D86 claims is (centre, person,
+                    # token) and carries no action dimension, so a code
+                    # already consumed by a reversal must never answer
+                    # this payment posting with that reversal: the
+                    # posting is refused whole and the person takes the
+                    # page's fresh code instead.
+                    return None, [], ["token_used_for_other_action"]
                 return winner.payment or winner.adjustment, [], [
                     "duplicate_submission",
                 ]
@@ -700,7 +708,13 @@ def reverse_payment(user, organization, payment_number, amount,
         if token:
             winner = _submission_row(organization, user, token)
             if winner is not None:
-                return winner.payment or winner.adjustment, [], [
+                if winner.adjustment is None and winner.payment is not None:
+                    # The code was consumed by a payment, not by a
+                    # reversal: answering with that payment would tell
+                    # the person this reversal had posted, which it
+                    # had not, so the reversal is refused whole.
+                    return None, [], ["token_used_for_other_action"]
+                return winner.adjustment or winner.payment, [], [
                     "duplicate_submission",
                 ]
         raise
@@ -776,32 +790,45 @@ def set_financial_obligation_status(user, organization, obligation_number,
                                     new_status):
     """FIN-005/6.2: move one agreement through this centre's transition table.
 
-    An agreement moves open -> paid once its installments are fully
-    allocated, and open or paid -> closed by this action. An agreement
-    closed by the closing action keeps its figures (6.2's closing rule),
-    and closing an agreement whose money is all settled is allowed; a
-    reopened agreement is not modelled (docs/OPEN_QUESTIONS.md asks the
-    owner).
+    An agreement closed by the closing action keeps its figures (6.2's closing
+    rule), and closing an agreement whose money is all settled is allowed; a
+    reopened agreement is not modelled (docs/OPEN_QUESTIONS.md asks the owner).
+    Marking an agreement paid is refused while money is still outstanding:
+    6.2 reads an agreement paid only once its money is settled, and
+    post_payment's auto-move is the other way into that same state. The
+    status move and its audit row save inside one atomic block on the
+    agreement row taken under the posting lock (D85), so this action and a
+    payment at the same agreement never read each other's pre-lock state.
     """
     require(user, organization, "finances.plan.manage")
     obligation = _obligation_here(organization, obligation_number)
     if obligation is None:
         return None, [], ["obligation_not_found"]
     target = str(new_status).strip().lower()
-    if target not in OBLIGATION_TRANSITIONS.get(obligation.status, ()):
-        return None, [], ["transition"]
-    obligation.status = target
-    obligation.status_changed_at = timezone.now()
-    obligation.full_clean()
-    obligation.save(update_fields=["status", "status_changed_at"])
-    if target == OBLIGATION_CLOSED:
-        _audit_row(
-            organization,
-            AUDIT_OBLIGATION_CLOSED,
-            user,
-            obligation=obligation,
-        )
-    return obligation, [], []
+    with transaction.atomic():
+        # Lock order step 1 (D85): the agreement row under the same lock
+        # the postings take, so a payment posting and this status move
+        # cannot interleave, and nothing below reads the pre-lock row.
+        locked = _locked_obligation(organization, obligation)
+        if locked is None:
+            return None, [], ["obligation_not_found"]
+        if target not in OBLIGATION_TRANSITIONS.get(locked.status, ()):
+            return None, [], ["transition"]
+        if target == OBLIGATION_PAID:
+            if obligation_figures(locked, organization)["outstanding"] > 0:
+                return None, [], ["transition"]
+        locked.status = target
+        locked.status_changed_at = timezone.now()
+        locked.full_clean()
+        locked.save(update_fields=["status", "status_changed_at"])
+        if target == OBLIGATION_CLOSED:
+            _audit_row(
+                organization,
+                AUDIT_OBLIGATION_CLOSED,
+                user,
+                obligation=locked,
+            )
+    return locked, [], []
 
 
 def record_financial_expense(user, organization, category, amount,
@@ -867,20 +894,32 @@ def withdraw_financial_expense(user, organization, expense_number):
     expense = _expense_here(organization, expense_number)
     if expense is None:
         return None, [], ["expense_not_found"]
-    if expense.status == EXPENSE_WITHDRAWN:
-        return expense, [], ["already_withdrawn"]
-    if EXPENSE_WITHDRAWN not in EXPENSE_TRANSITIONS.get(
-        expense.status, ()
-    ):
-        return None, [], ["transition"]
-    expense.status = EXPENSE_WITHDRAWN
-    expense.status_changed_at = timezone.now()
-    expense.full_clean()
-    expense.save(update_fields=["status", "status_changed_at"])
-    _audit_row(
-        organization,
-        AUDIT_EXPENSE_WITHDRAWN,
-        user,
-        expense=expense,
-    )
-    return expense, [], []
+    with transaction.atomic():
+        # Take the expense row under the same transaction discipline as the
+        # financial status moves, so two withdrawal attempts cannot both see
+        # an active row and each write their own audit history.
+        locked_expense = Expense.objects.filter(
+            organization=organization, pk=expense.pk
+        ).select_for_update().first()
+        if locked_expense is None:
+            return None, [], ["expense_not_found"]
+        if locked_expense.status == EXPENSE_WITHDRAWN:
+            return locked_expense, [], ["already_withdrawn"]
+        if EXPENSE_WITHDRAWN not in EXPENSE_TRANSITIONS.get(
+            locked_expense.status, ()
+        ):
+            return None, [], ["transition"]
+        # The status move and its audit row commit together, so a failed
+        # audit save can never leave a withdrawn expense without the
+        # traceable history FIN-011 asks for.
+        locked_expense.status = EXPENSE_WITHDRAWN
+        locked_expense.status_changed_at = timezone.now()
+        locked_expense.full_clean()
+        locked_expense.save(update_fields=["status", "status_changed_at"])
+        _audit_row(
+            organization,
+            AUDIT_EXPENSE_WITHDRAWN,
+            user,
+            expense=locked_expense,
+        )
+    return locked_expense, [], []
