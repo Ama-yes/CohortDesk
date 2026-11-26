@@ -13,7 +13,7 @@ model API), because the service layer is the one place the rules live.
 
 from datetime import date, timedelta
 
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import IntegrityError, transaction
 from django.test import TestCase, TransactionTestCase
 
@@ -32,6 +32,7 @@ from .services import (
     ENTRY_STATUSES,
     STUDENT_TRANSITIONS,
     _application_here,
+    _link_converted_student,
     _student_here,
     archive_student,
     convert_application,
@@ -468,6 +469,83 @@ class ApplicationRecordTests(CenterFixture):
         self.assertIsNone(_application_here(self.beta, str(application.pk)))
 
 
+class ApplicationTenantInvariantTests(CenterFixture):
+    """RULE 6.1: the link from an application to its student stays in-centre."""
+
+    def setUp(self):
+        super().setUp()
+        self.student = Student.objects.create(
+            organization=self.alpha,
+            student_number="AC-1",
+            name="Alpha Learner",
+            status=STATUS_ACTIVE,
+        )
+        self.beta_student = Student.objects.create(
+            organization=self.beta,
+            student_number="BC-1",
+            name="Beta Learner",
+            status=STATUS_ACTIVE,
+        )
+
+    def test_a_student_of_another_centre_is_refused(self):
+        """An application never names a student record of another centre."""
+        application = Application.objects.create(
+            organization=self.alpha, name="Applied Learner"
+        )
+        application.converted_student = self.beta_student
+        with self.assertRaises(ValidationError) as error:
+            application.full_clean(exclude=["organization"])
+        self.assertIn("converted_student", error.exception.error_dict)
+
+    def test_a_student_of_this_centre_is_accepted(self):
+        """The same-centre link the conversion action makes stays valid."""
+        application = Application.objects.create(
+            organization=self.alpha, name="Applied Learner"
+        )
+        application.converted_student = self.student
+        application.full_clean(exclude=["organization"])
+        self.assertEqual(
+            application.converted_student.organization_id, self.alpha.pk
+        )
+
+    def test_the_service_boundary_refuses_a_foreign_student_without_writing(self):
+        """The one write that sets the link validates before it persists."""
+        application = Application.objects.create(
+            organization=self.alpha, name="Applied Learner"
+        )
+        saved, problems, notes = _link_converted_student(
+            application, self.beta_student
+        )
+        self.assertIsNone(saved)
+        self.assertEqual(notes, [])
+        self.assertTrue(problems)
+        application.refresh_from_db()
+        self.assertIsNone(application.converted_student_id)
+        self.assertEqual(
+            Student.objects.filter(organization=self.beta).count(), 1
+        )
+
+    def test_the_service_boundary_persists_a_same_centre_student(self):
+        """The allowed service write stores a link that survives a reload."""
+        application = Application.objects.create(
+            organization=self.alpha, name="Applied Learner"
+        )
+        candidate = Student(
+            organization=self.alpha,
+            student_number="AC-2",
+            name="Converted Learner",
+            status=STATUS_ACTIVE,
+        )
+        saved, problems, notes = _link_converted_student(application, candidate)
+        self.assertEqual((problems, notes), ([], []))
+        self.assertIsNotNone(saved.pk)
+        application.refresh_from_db()
+        self.assertEqual(application.converted_student_id, saved.pk)
+        self.assertEqual(
+            application.converted_student.organization_id, self.alpha.pk
+        )
+
+
 class ApplicationTransitionTests(CenterFixture):
     """ADM-003: the application table, including accepted as terminal."""
 
@@ -578,6 +656,9 @@ class ConversionTests(CenterFixture):
         self.assertEqual(record.status, STATUS_ACTIVE)
         application.refresh_from_db()
         self.assertEqual(application.converted_student_id, record.pk)
+        self.assertEqual(
+            application.converted_student.organization_id, self.alpha.pk
+        )
         self.assertEqual(
             [link.pk for link in record.converted_applications.all()],
             [application.pk],

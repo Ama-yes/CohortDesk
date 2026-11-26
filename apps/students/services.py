@@ -32,8 +32,12 @@ Contract (one shape for all actions): (record_or_none, problems, notes)
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 
+from apps.organizations.models import Members
+from apps.organizations.roles import ROLE_INSTRUCTOR
 from apps.organizations.services import require
-from .models import Student, Application
+from apps.students.models import Student, Application
+from apps.academics.models import Enrollment
+from apps.staff.models import CohortInstructor
 from .statuses import (
     STATUS_ACTIVE,
     STATUS_APPLICANT,
@@ -123,6 +127,54 @@ def _student_here(organization, number):
     return Student.objects.filter(
         organization=organization, student_number=normalized
     ).first()
+
+
+# ADM-001/SEC-001: an instructor's student read is cohort-scoped, never centre-
+# wide (docs/DECISIONS.md D110). The rule mirrors _attendance_scope and _grade_
+# scope exactly: only an instructor is narrowed, to the students enrolled in the
+# cohorts their own staff record is assigned to; every other role reads its own
+# centre's records. Enrollment status takes no part: the cohorts' own enrollment
+# rows are the link, so a withdrawn, completed or cancelled enrollment keeps the
+# student findable, the same way RULE 6.2 keeps a record findable after archive
+# and the attendance scope keeps an archived cohort's records readable.
+def _student_scope(user, organization):
+    """Student ids the caller may read, or None (all)."""
+    member = Members.objects.filter(
+        user=user, organization=organization
+    ).first()
+    if member is None or member.role != ROLE_INSTRUCTOR:
+        return None
+    cohorts = set(
+        CohortInstructor.objects.filter(
+            organization=organization, staff__user=user
+        ).values_list("cohort_id", flat=True)
+    )
+    if not cohorts:
+        return set()
+    return set(
+        Enrollment.objects.filter(
+            organization=organization, cohort_id__in=cohorts
+        ).values_list("student_id", flat=True)
+    )
+
+
+def view_student(user, organization, number):
+    """STU-001/STU-002/SEC-001: the record this caller may read, or None.
+
+    Permission first, then the centre-scoped lookup, then the instructor's
+    cohort scope. A record outside the caller's scope answers exactly as a
+    number with no record here does, so the answer never says that a record
+    exists that the caller may not see (SEC-003/STU-002: this centre speaks
+    only about its own, and never about what another centre holds).
+    """
+    require(user, organization, "students.view")
+    record = _student_here(organization, number)
+    if record is None:
+        return None
+    scope = _student_scope(user, organization)
+    if scope is not None and record.pk not in scope:
+        return None
+    return record
 
 
 def _application_here(organization, application_number):
@@ -303,6 +355,32 @@ def set_application_status(user, organization, application_number, new_status):
     return application, [], []
 
 
+def _link_converted_student(application, record):
+    """Validate and persist ADM-004's link at the service boundary.
+
+    Ordinary `save()` never calls `full_clean()`, so the model's same-centre
+    rule would otherwise be bypassed by the one write that sets this field.
+    Validate the application with the candidate student first; only then save
+    the student (when it is new) and the link. A foreign student is refused
+    before either row is written.
+    """
+    application.converted_student = record
+    try:
+        application.full_clean(exclude=["organization"])
+    except ValidationError as error:
+        return None, _field_problems(error), []
+    if record.pk is None:
+        try:
+            record.save()
+        except Exception:
+            return None, [], ["number_used"]
+    # Reassign now a new student has its primary key, so the validated link is
+    # the one that is actually persisted.
+    application.converted_student = record
+    application.save(update_fields=["converted_student"])
+    return record, [], []
+
+
 def convert_application(user, organization, application_number):
     """ADM-004: an accepted application creates its student record.
 
@@ -341,10 +419,4 @@ def convert_application(user, organization, application_number):
         record.full_clean(exclude=["organization"])
     except ValidationError as error:
         return None, _field_problems(error), []
-    try:
-        record.save()
-    except Exception:
-        return None, [], ["number_used"]
-    application.converted_student = record
-    application.save(update_fields=["converted_student"])
-    return record, [], []
+    return _link_converted_student(application, record)

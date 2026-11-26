@@ -286,13 +286,29 @@ def members_rows(center, ui):
     ]
 
 
-def members_form_at(action, ui, sent):
-    """The change-membership form: this centre's actions, accounts, and roles."""
+def members_form_at(action, ui, sent, center):
+    """The change-membership form: this centre's actions, accounts, and roles.
+
+    SEC-001/RULE 6.1: no page of one centre may name the people of another,
+    so the account options are this centre's own people (suspended people
+    included, since restoring them is one of the actions) plus the accounts
+    that belong to no centre yet. A foreign centre's roster must never be
+    offered here, which is the same line the members list page already
+    proves in apps/organizations/test_access.py.
+    """
     User = get_user_model()
     roles = [{"value": code, "label": ui["role_" + code]} for code, _ in ROLE_CHOICES]
+    here = set(
+        Members.objects.filter(organization=center).values_list("user_id", flat=True)
+    )
+    attached = set(Members.objects.values_list("user_id", flat=True))
     people = [
-        {"value": person.username, "label": person.display_name or person.username}
+        {
+            "value": person.username,
+            "label": person.display_name or person.username,
+        }
         for person in User.objects.order_by("username")
+        if person.pk in here or person.pk not in attached
     ]
     return {
         "id": action.rstrip("/"),
@@ -374,7 +390,7 @@ def members_manage(request, slug):
             "members_manage",
             {
                 "fields": members_fields(ui, sent, {}),
-                "form": members_form_at(action_at, ui, sent),
+                "form": members_form_at(action_at, ui, sent, center),
             },
             center=center,
         )
@@ -426,7 +442,7 @@ def members_manage(request, slug):
         "members_manage",
         {
             "fields": members_fields(ui, sent, problems),
-            "form": members_form_at(action_at, ui, sent),
+            "form": members_form_at(action_at, ui, sent, center),
             "note": note,
             "note_kind": kind,
         },

@@ -20,7 +20,6 @@ Page and form share one definition (the students page pattern): each
 collects, so a person is never asked for a value nowhere is shown.
 """
 
-import csv
 from datetime import UTC, datetime, time, timedelta
 from decimal import Decimal, InvalidOperation
 from urllib.parse import urlencode
@@ -31,6 +30,7 @@ from django.http import HttpResponse
 from django.utils import timezone
 from django.utils.timezone import make_aware
 
+from apps.csv_safety import csv_writer
 from apps.organizations.permissions import role_has_permission
 from apps.organizations.views import READ_METHODS, here
 from apps.pages import center_ui, page
@@ -2108,8 +2108,8 @@ def reports_csv(request, slug):
     response["Content-Disposition"] = (
         'attachment; filename="enrollments-{}.csv"'.format(center.slug)
     )
-    writer = csv.writer(response)
-    writer.writerow(
+    write = csv_writer(response)
+    write(
         [
             ui["enrollments_number"],
             ui["field_student_number"],
@@ -2123,7 +2123,7 @@ def reports_csv(request, slug):
         ]
     )
     for record in report["enrollments"]:
-        writer.writerow(
+        write(
             [
                 record.pk,
                 record.student.student_number,
@@ -2916,8 +2916,8 @@ def attendance_register_csv(request, slug, number):
     response["Content-Disposition"] = (
         'attachment; filename="attendance-{}-{}.csv"'.format(session.pk, center.slug)
     )
-    writer = csv.writer(response)
-    writer.writerow(
+    write = csv_writer(response)
+    write(
         [
             ui["sessions_number"],
             ui["attendance_student"],
@@ -2931,7 +2931,7 @@ def attendance_register_csv(request, slug, number):
     for record in Attendance.objects.filter(session=session).order_by(
         "student__student_number", "pk"
     ).select_related("student"):
-        writer.writerow(
+        write(
             [
                 str(session.pk),
                 record.student.student_number,
@@ -2984,8 +2984,8 @@ def attendance_report_csv(request, slug):
     response["Content-Disposition"] = (
         'attachment; filename="attendance-{}.csv"'.format(center.slug)
     )
-    writer = csv.writer(response)
-    writer.writerow(
+    write = csv_writer(response)
+    write(
         [
             ui["sessions_number"],
             ui["field_start_time"],
@@ -2999,7 +2999,7 @@ def attendance_report_csv(request, slug):
         ]
     )
     for record in report["attendance"]:
-        writer.writerow(
+        write(
             [
                 record.session.pk,
                 moment_text(center, record.session.start_at),

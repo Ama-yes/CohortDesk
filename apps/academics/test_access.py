@@ -32,6 +32,7 @@ from apps.organizations.roles import (
 )
 from apps.students.models import Student
 from apps.students.statuses import STATUS_ACTIVE, STATUS_ARCHIVED
+from apps.test_csv_safety import FORMULA_CELLS, exported_rows
 
 from .models import (
     AcademicPeriod,
@@ -1980,6 +1981,33 @@ class SessionAttendanceAccess(TestCase):
     def body(self, response):
         return response.content.decode()
 
+    def test_the_student_profile_shows_only_attendance_the_viewer_may_read(self):
+        """ATT-004/STU-006: the profile's attendance obeys the same scope.
+
+        The student has one record in the cohort this instructor teaches and
+        one in the cohort they do not; the profile names the taught session
+        only, while an unrestricted role at the centre sees both. Hiding the
+        attendance pages' links is not what enforces this (SEC-001).
+        """
+        Attendance.objects.create(
+            organization=self.alpha,
+            session=self.winter_session,
+            student=self.alpha_student,
+            status=ATTENDANCE_PRESENT,
+        )
+        profile = "/o/alpha-center/center/students/AC-1/"
+        self.client.force_login(self.teacher)
+        answer = self.client.get(profile)
+        self.assertEqual(answer.status_code, 200)
+        self.assertEqual(answer["X-CohortDesk-Page"], "student")
+        body = self.body(answer)
+        self.assertIn("Alpha Autumn", body)
+        self.assertNotIn("Alpha Winter", body)
+        self.client.force_login(self.alpha_owner)
+        body = self.body(self.client.get(profile))
+        self.assertIn("Alpha Autumn", body)
+        self.assertIn("Alpha Winter", body)
+
     def test_the_pages_answer_exactly_the_roles_that_read_them(self):
         self.client.force_login(self.alpha_owner)
         for kind in ("sessions", "attendance"):
@@ -2501,6 +2529,51 @@ class SessionAttendanceAccess(TestCase):
         lines = self.body(answer).splitlines()
         self.assertEqual(len(lines), 2)
         self.assertIn("AC-1", lines[1])
+
+    def test_formula_looking_notes_are_exported_as_data(self):
+        """CSV injection: every dangerous prefix in a note is text."""
+        self.client.force_login(self.alpha_owner)
+        for value in FORMULA_CELLS:
+            Attendance.objects.filter(
+                organization=self.alpha, student=self.alpha_student
+            ).update(note=value)
+            rows = exported_rows(
+                self.client.get(
+                    "/o/{}/center/attendance/{}/register.csv".format(
+                        self.alpha.slug, self.autumn_session.pk
+                    )
+                )
+            )
+            self.assertEqual(len(rows), 2)
+            self.assertEqual(rows[1][6], "'" + value)
+
+    def test_formula_looking_names_are_exported_as_data(self):
+        """CSV injection: a student's name in the enrollments file is text."""
+        self.client.force_login(self.alpha_owner)
+        for value in FORMULA_CELLS:
+            Student.objects.filter(pk=self.alpha_student.pk).update(name=value)
+            rows = exported_rows(
+                self.client.get(
+                    "/o/{}/center/reports/enrollments.csv".format(
+                        self.alpha.slug
+                    )
+                )
+            )
+            row = next(item for item in rows[1:] if item[1] == "AC-1")
+            self.assertEqual(row[2], "'" + value)
+
+    def test_formula_looking_cohort_names_are_exported_as_data(self):
+        """CSV injection: the attendance report's cohort cell is text."""
+        self.client.force_login(self.alpha_owner)
+        for value in FORMULA_CELLS:
+            Cohort.objects.filter(pk=self.alpha_cohort.pk).update(name=value)
+            rows = exported_rows(
+                self.client.get(
+                    "/o/{}/center/reports/attendance.csv".format(self.alpha.slug)
+                )
+            )
+            self.assertEqual(len(rows), 2)
+            self.assertEqual(rows[1][2], "'" + value)
 
     def test_the_reports_page_shows_the_attendance_parts_only_to_who_may_read_them(self):
         self.client.force_login(self.alpha_owner)

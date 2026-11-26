@@ -20,6 +20,7 @@ model API), because the service layer is the one place the rules live.
 
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
+from unittest import mock
 
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import IntegrityError, transaction
@@ -2084,6 +2085,24 @@ class CorrectionTests(CenterFixture):
         self.assertEqual(log.session_id, self.session.pk)
         self.assertEqual(log.student_id, self.student.pk)
         self.assertIsNotNone(log.at)
+
+    def test_a_failed_audit_save_rolls_the_correction_back(self):
+        """RULE 6.5: the corrected row and its audit row commit together."""
+        before = self.audits()
+        with mock.patch(
+            "apps.academics.services.AuditLog.save",
+            side_effect=RuntimeError("audit failed"),
+        ):
+            with self.assertRaises(RuntimeError):
+                correct_attendance(
+                    self.coordinator,
+                    self.alpha,
+                    self.session.pk,
+                    self.student.student_number,
+                    "late",
+                )
+        self.assertEqual(self.saved().status, ATTENDANCE_ABSENT)
+        self.assertEqual(self.audits(), before)
 
     def test_a_correction_to_a_state_that_is_not_allowed_changes_nothing(self):
         before = self.audits()

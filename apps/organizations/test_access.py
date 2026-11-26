@@ -146,6 +146,141 @@ class TwoCenters(TestCase):
         self.assertIn('id="members_target_problem"', answer.content.decode())
         self.assertEqual(self.alpha.members.count(), 2)
 
+    def test_members_form_never_names_another_centres_people(self):
+        """The manage form offers this centre's people, and only this centre's.
+
+        SEC-001/RULE 6.1: the account options are built server-side, so a
+        person of another centre must never be named here - not even as a
+        choice in a form the page hands out.
+        """
+        self.client.force_login(self.alpha_owner)
+        page = self.client.get("/o/alpha-center/center/members/manage/")
+        self.assertEqual(page.status_code, 200)
+        self.assertEqual(page["X-CohortDesk-Page"], "members_manage")
+        body = page.content.decode()
+        self.assertIn('value="alpha-owner"', body)
+        self.assertIn('value="outsider"', body)
+        self.assertNotIn("beta-owner", body)
+        self.assertNotIn("Beta Owner", body)
+
+    def test_members_form_still_offers_an_account_of_no_centre(self):
+        """A person with no centre yet can still be added from this form."""
+        newcomer = CohortUser.objects.create_user(
+            username="newcomer", password="x", display_name="Newcomer"
+        )
+        self.client.force_login(self.alpha_owner)
+        page = self.client.get("/o/alpha-center/center/members/manage/")
+        self.assertIn('value="newcomer"', page.content.decode())
+        answer = self.client.post(
+            "/o/alpha-center/center/members/manage/",
+            {
+                "members_action": "add",
+                "members_target": "newcomer",
+                "members_role": "instructor",
+            },
+        )
+        self.assertEqual(answer.status_code, 200)
+        self.assertEqual(answer["X-CohortDesk-Page"], "members_manage")
+        self.assertTrue(
+            Members.objects.filter(
+                user=newcomer, organization=self.alpha, role=ROLE_INSTRUCTOR
+            ).exists()
+        )
+
+    def test_forged_add_of_another_centres_account_changes_nothing(self):
+        """The form's own option rule is enforced on the write, not by hiding.
+
+        D105: the page offers this centre's people plus accounts of no centre.
+        A POST naming another centre's account must be refused by the service
+        even though the page never offered it.
+        """
+        self.client.force_login(self.alpha_owner)
+        answer = self.client.post(
+            "/o/alpha-center/center/members/manage/",
+            {
+                "members_action": "add",
+                "members_target": "beta-owner",
+                "members_role": "owner",
+            },
+        )
+        self.assertEqual(answer.status_code, 200)
+        self.assertEqual(answer["X-CohortDesk-Page"], "members_manage")
+        self.assertIn('id="members_target_problem"', answer.content.decode())
+        self.assertFalse(
+            Members.objects.filter(
+                user=self.beta_owner, organization=self.alpha
+            ).exists()
+        )
+        self.assertEqual(Members.objects.filter(user=self.beta_owner).count(), 1)
+        self.assertEqual(
+            Members.objects.get(
+                user=self.beta_owner, organization=self.beta
+            ).role,
+            ROLE_OWNER,
+        )
+
+    def test_members_form_keeps_a_suspended_centre_member_offerable(self):
+        """Restoring a suspended centre member must remain possible."""
+        Members.objects.filter(
+            user=self.outsider, organization=self.alpha
+        ).update(status="suspended")
+        self.client.force_login(self.alpha_owner)
+        body = self.client.get(
+            "/o/alpha-center/center/members/manage/"
+        ).content.decode()
+        self.assertIn('value="outsider"', body)
+
+    def test_forged_member_target_cannot_change_another_centres_member(self):
+        """The service boundary refuses a cross-centre member action."""
+        self.client.force_login(self.alpha_owner)
+        self.assertEqual(
+            Members.objects.filter(
+                user=self.beta_owner, organization=self.beta, status="active"
+            ).count(),
+            1,
+        )
+        for action in ("suspend", "restore"):
+            answer = self.client.post(
+                "/o/alpha-center/center/members/manage/",
+                {
+                    "members_action": action,
+                    "members_target": "beta-owner",
+                    "members_role": "instructor",
+                },
+            )
+            self.assertEqual(answer.status_code, 200)
+            self.assertEqual(answer["X-CohortDesk-Page"], "members_manage")
+            self.assertIn('id="members_target_problem"', answer.content.decode())
+            self.assertEqual(
+                Members.objects.filter(
+                    user=self.beta_owner,
+                    organization=self.beta,
+                    role=ROLE_OWNER,
+                    status="active",
+                ).count(),
+                1,
+            )
+        answer = self.client.post(
+            "/o/alpha-center/center/members/manage/",
+            {
+                "members_action": "set_role",
+                "members_target": "beta-owner",
+                "members_role": "instructor",
+            },
+        )
+        self.assertEqual(answer.status_code, 200)
+        self.assertEqual(answer["X-CohortDesk-Page"], "members_manage")
+        self.assertIn('id="members_target_problem"', answer.content.decode())
+        self.assertEqual(
+            Members.objects.filter(
+                user=self.beta_owner,
+                organization=self.beta,
+                role=ROLE_OWNER,
+                status="active",
+            ).count(),
+            1,
+        )
+
     def test_write_to_a_read_only_address_is_the_problem_page(self):
         """A write at a read-only centre address is 405, not a 500.
 

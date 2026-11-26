@@ -11,7 +11,6 @@ narrowed to their assigned cohorts server-side (GRD-004's mirror of ATT-004),
 and the CSV answers carry the same permission, scope and rows as their pages
 (SEC-001: a hidden link is not authorization)."""
 
-import csv
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
 
@@ -20,6 +19,7 @@ from django.db.models import Q
 from django.http import HttpResponse
 from django.utils import timezone
 
+from apps.csv_safety import csv_writer
 from apps.organizations.permissions import role_has_permission
 from apps.organizations.views import READ_METHODS, here
 from apps.pages import center_ui, page
@@ -123,6 +123,9 @@ RESULT_FIELD_UI = {
 }
 RESULT_ACTIONS = ("record", "update")
 RESULT_ACTION_UI = {"record": "grading_action_record", "update": "grading_action_update"}
+# GradeAuditEvent.reason's stored width; a longer typed value is refused on
+# the page instead of reaching full_clean() inside the audit transaction.
+RESULT_REASON_MAX = 200
 RESULT_PROBLEM_UI = {
     "assessment_not_found": ("result_assessment", "grading_assessment_not_found"),
     "not_assigned": ("result_assessment", "grading_not_assigned"),
@@ -837,6 +840,11 @@ def results_manage(request, slug):
                     )
                 else:
                     problems["result_score"] = ui["field_required"]
+        if len(sent["result_reason"]) > RESULT_REASON_MAX:
+            problems["result_reason"] = ui["field_invalid"].format(
+                sent["result_reason"]
+            )
+            bad_input = True
         if bad_input:
             saved, field_problems, codes = None, [], []
         else:
@@ -1014,8 +1022,8 @@ def assessment_results_csv(request, slug, number):
     response["Content-Disposition"] = (
         'attachment; filename="assessment-{}-{}-results.csv"'.format(center.slug, record.pk)
     )
-    writer = csv.writer(response)
-    writer.writerow(
+    write = csv_writer(response)
+    write(
         [
             ui["grading_csv_center"],
             ui["grading_csv_assessment"],
@@ -1025,7 +1033,7 @@ def assessment_results_csv(request, slug, number):
             ui["grading_sheet_row_score"],
         ]
     )
-    writer.writerow(
+    write(
         [
             center.slug,
             str(record.pk),
@@ -1036,7 +1044,7 @@ def assessment_results_csv(request, slug, number):
         ]
     )
     for row in assessment_results_rows(ui, record):
-        writer.writerow(
+        write(
             [
                 center.slug,
                 str(record.pk),
@@ -1117,8 +1125,8 @@ def cohort_report_csv(request, slug):
     response["Content-Disposition"] = 'attachment; filename="grading-report-{}.csv"'.format(
         center.slug
     )
-    writer = csv.writer(response)
-    writer.writerow(
+    write = csv_writer(response)
+    write(
         [
             ui["grading_csv_center"],
             ui["grading_row_cohort"],
@@ -1133,7 +1141,7 @@ def cohort_report_csv(request, slug):
     for entry in grading_rows(center, scope=scope):
         assessment = entry["assessment"]
         counts = entry["counts"]
-        writer.writerow(
+        write(
             [
                 center.slug,
                 cohort_shown(assessment.cohort),

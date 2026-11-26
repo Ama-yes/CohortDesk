@@ -21,7 +21,7 @@ the model API), because the service layer is the one place the rules live.
 from datetime import date, timedelta
 from decimal import Decimal
 import threading
-from unittest import skipUnless
+from unittest import mock, skipUnless
 
 from django.core.exceptions import PermissionDenied
 from django.core.exceptions import ValidationError
@@ -62,6 +62,7 @@ from .models import (
     ReceiptCounter,
 )
 from .reporting import (
+    _obligation_today,
     financial_rows,
     obligation_figures,
     payment_figures,
@@ -1858,11 +1859,12 @@ class DerivedFiguresTests(TestCase):
             organization,
             late_plan.pk,
             Decimal("400"),
-            date.today() + timedelta(days=-1),
+            _obligation_today(organization) - timedelta(days=1),
         )
         self.assertEqual(problems, [])
         self.assertEqual(notes, [])
         self.assertIsNotNone(late_installment)
+        self.assertLess(late_installment.due_date, _obligation_today(organization))
         rows = {row["id"]: row["value"] for row in financial_rows(organization)}
         self.assertEqual(rows["overdue"], 1)
         self.assertEqual(rows["overdue_amount"], Decimal("400"))
@@ -2183,4 +2185,258 @@ class ExpenseCurrencyTests(AgreementSetup):
         loaded.full_clean(exclude=["organization"])
 
 
-# === NEXT CHUNK GOES HERE ===
+class SubmissionTokenActionTests(AgreementSetup):
+    """D86's submission code names one action, never the other one.
+
+    FinanceSubmission is unique on (organization, recorded_by, token) and
+    carries no action dimension (a schema change is recorded in
+    docs/OPEN_QUESTIONS.md rather than made here), so the services must refuse
+    a code whose stored outcome belongs to the other action instead of
+    answering as though this action had already posted.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.enrollment = self.enroll(agreed_fee=Decimal("1000"))
+        self.obligation = self.open_obligation(self.enrollment)
+        fee_plan = self.plan(self.obligation)
+        self.first = self.installment(fee_plan, Decimal("600"), IN_DAYS, 1)
+        self.second = self.installment(fee_plan, Decimal("400"), OUT_DAYS, 2)
+
+    def post_first(self, token):
+        return post_payment(
+            self.finance,
+            self.alpha,
+            self.obligation.pk,
+            Decimal("600"),
+            METHOD_CASH,
+            allocations=((self.first.pk, Decimal("600")),),
+            token=token,
+        )
+
+    def test_a_code_used_by_a_payment_cannot_answer_a_reversal(self):
+        """Reusing a posting's code on a reversal must post no reversal."""
+        payment, problems, notes = self.post_first("code-one")
+        self.assertIsNotNone(payment)
+        self.assertEqual(notes, [])
+        adjustment, problems, notes = reverse_payment(
+            self.finance,
+            self.alpha,
+            payment.pk,
+            Decimal("100"),
+            token="code-one",
+        )
+        self.assertIsNone(adjustment)
+        self.assertEqual(problems, [])
+        self.assertEqual(notes, ["token_used_for_other_action"])
+        self.assertFalse(
+            FinancialAdjustment.objects.filter(payment=payment).exists()
+        )
+        self.assertEqual(
+            Payment.objects.get(pk=payment.pk).status, PAYMENT_RECORDED
+        )
+
+    def test_a_code_used_by_a_reversal_cannot_answer_a_payment(self):
+        """Reusing a reversal's code on a payment must post no payment."""
+        payment = self.pay(
+            self.obligation,
+            Decimal("600"),
+            ((self.first.pk, Decimal("600")),),
+        )
+        adjustment, problems, notes = reverse_payment(
+            self.finance,
+            self.alpha,
+            payment.pk,
+            Decimal("100"),
+            token="code-two",
+        )
+        self.assertIsNotNone(adjustment)
+        self.assertEqual(notes, [])
+        posted, problems, notes = post_payment(
+            self.finance,
+            self.alpha,
+            self.obligation.pk,
+            Decimal("400"),
+            METHOD_CASH,
+            allocations=((self.second.pk, Decimal("400")),),
+            token="code-two",
+        )
+        self.assertIsNone(posted)
+        self.assertEqual(problems, [])
+        self.assertEqual(notes, ["token_used_for_other_action"])
+        self.assertEqual(
+            Payment.objects.filter(obligation=self.obligation).count(), 1
+        )
+
+    def test_the_same_code_repeated_on_the_same_action_is_the_replay(self):
+        """A code reused on its own action still answers with that outcome."""
+        payment, problems, notes = self.post_first("code-three")
+        self.assertEqual(notes, [])
+        again, problems, notes = self.post_first("code-three")
+        self.assertEqual(problems, [])
+        self.assertEqual(notes, ["duplicate_submission"])
+        self.assertEqual(again.pk, payment.pk)
+        self.assertEqual(
+            Payment.objects.filter(obligation=self.obligation).count(), 1
+        )
+
+    def test_the_same_code_repeated_on_the_same_reversal_is_the_replay(self):
+        """A reversal's code reused on a reversal answers with that reversal."""
+        payment = self.pay(
+            self.obligation,
+            Decimal("600"),
+            ((self.first.pk, Decimal("600")),),
+        )
+        adjustment, problems, notes = reverse_payment(
+            self.finance,
+            self.alpha,
+            payment.pk,
+            Decimal("100"),
+            token="code-four",
+        )
+        self.assertIsNotNone(adjustment)
+        again, problems, notes = reverse_payment(
+            self.finance,
+            self.alpha,
+            payment.pk,
+            Decimal("100"),
+            token="code-four",
+        )
+        self.assertEqual(problems, [])
+        self.assertEqual(notes, ["duplicate_submission"])
+        self.assertEqual(again.pk, adjustment.pk)
+        self.assertEqual(
+            FinancialAdjustment.objects.filter(
+                payment=payment, kind=ADJ_REVERSAL
+            ).count(),
+            1,
+        )
+
+
+class ObligationStatusTests(AgreementSetup):
+    """FIN-005/6.2: paid means the money is settled, and each move is atomic."""
+
+    def setUp(self):
+        super().setUp()
+        self.enrollment = self.enroll(agreed_fee=Decimal("1000"))
+        self.obligation = self.open_obligation(self.enrollment)
+        fee_plan = self.plan(self.obligation)
+        self.first = self.installment(fee_plan, Decimal("600"), IN_DAYS, 1)
+        self.second = self.installment(fee_plan, Decimal("400"), OUT_DAYS, 2)
+
+    def test_paid_is_refused_while_money_is_outstanding(self):
+        """A half-paid agreement cannot be marked paid by hand."""
+        self.pay(
+            self.obligation, Decimal("600"), ((self.first.pk, Decimal("600")),)
+        )
+        saved, problems, notes = set_financial_obligation_status(
+            self.finance, self.alpha, self.obligation.pk, OBLIGATION_PAID
+        )
+        self.assertIsNone(saved)
+        self.assertEqual(problems, [])
+        self.assertEqual(notes, ["transition"])
+        self.assertEqual(
+            FeeObligation.objects.get(pk=self.obligation.pk).status,
+            OBLIGATION_OPEN,
+        )
+
+    def test_paid_is_allowed_once_the_money_is_settled(self):
+        """A settled agreement (nothing outstanding) may be marked paid."""
+        adjustment, problems, notes = record_financial_adjustment(
+            self.finance,
+            self.alpha,
+            self.obligation.pk,
+            ADJ_DISCOUNT,
+            Decimal("1000"),
+            reason="Settled by the owner",
+        )
+        self.assertIsNotNone(adjustment)
+        self.assertEqual(notes, [])
+        saved, problems, notes = set_financial_obligation_status(
+            self.finance, self.alpha, self.obligation.pk, OBLIGATION_PAID
+        )
+        self.assertEqual(problems, [])
+        self.assertEqual(notes, [])
+        self.assertIsNotNone(saved)
+        self.assertEqual(
+            FeeObligation.objects.get(pk=self.obligation.pk).status,
+            OBLIGATION_PAID,
+        )
+
+    def test_closing_still_audits_the_close(self):
+        """The close keeps its FIN-008/FIN-009 audit record."""
+        saved, problems, notes = set_financial_obligation_status(
+            self.finance, self.alpha, self.obligation.pk, OBLIGATION_CLOSED
+        )
+        self.assertEqual(problems, [])
+        self.assertEqual(notes, [])
+        self.assertIsNotNone(saved)
+        self.assertTrue(
+            FinanceAuditEvent.objects.filter(
+                organization=self.alpha,
+                action=AUDIT_OBLIGATION_CLOSED,
+                obligation=self.obligation,
+            ).exists()
+        )
+
+    def test_a_failed_audit_save_rolls_the_close_back(self):
+        """The status move and its audit row commit, or neither does."""
+        with mock.patch(
+            "apps.finances.services._audit_row",
+            side_effect=RuntimeError("audit failed"),
+        ):
+            with self.assertRaises(RuntimeError):
+                set_financial_obligation_status(
+                    self.finance,
+                    self.alpha,
+                    self.obligation.pk,
+                    OBLIGATION_CLOSED,
+                )
+        self.assertEqual(
+            FeeObligation.objects.get(pk=self.obligation.pk).status,
+            OBLIGATION_OPEN,
+        )
+
+    def test_an_unknown_status_is_still_refused(self):
+        """The transition table still refuses a word that is not a status."""
+        saved, problems, notes = set_financial_obligation_status(
+            self.finance, self.alpha, self.obligation.pk, "settled"
+        )
+        self.assertIsNone(saved)
+        self.assertEqual(problems, [])
+        self.assertEqual(notes, ["transition"])
+        self.assertEqual(
+            FeeObligation.objects.get(pk=self.obligation.pk).status,
+            OBLIGATION_OPEN,
+        )
+
+
+class ExpenseWithdrawalAuditTests(AgreementSetup):
+    """FIN-011: a withdrawn expense and its audit row commit together."""
+
+    def test_a_failed_audit_save_rolls_the_withdrawal_back(self):
+        record, problems, notes = record_financial_expense(
+            self.finance,
+            self.alpha,
+            "Classroom supplies",
+            Decimal("30.00"),
+            date.today(),
+            payee="The corner shop",
+        )
+        self.assertEqual(problems, [])
+        self.assertEqual(notes, [])
+        with mock.patch(
+            "apps.finances.services._audit_row",
+            side_effect=RuntimeError("audit failed"),
+        ):
+            with self.assertRaises(RuntimeError):
+                withdraw_financial_expense(
+                    self.finance, self.alpha, record.pk
+                )
+        record.refresh_from_db()
+        self.assertEqual(record.status, EXPENSE_RECORDED)
+        self.assertFalse(
+            FinanceAuditEvent.objects.filter(
+                organization=self.alpha, action=AUDIT_EXPENSE_WITHDRAWN
+            ).exists()
+        )

@@ -36,7 +36,7 @@ from apps.organizations.permissions import role_has_permission
 from .models import Application, Student
 from .services import (
     EDITABLE_STUDENT_FIELDS,
-    _student_here,
+    _student_scope,
     archive_student,
     convert_application,
     create_student,
@@ -44,6 +44,7 @@ from .services import (
     record_application,
     set_application_status,
     set_student_status,
+    view_student,
 )
 from .statuses import (
     STATUS_APPLICANT,
@@ -192,17 +193,26 @@ def text_value(center, value):
     return value.astimezone(zone).strftime("%Y-%m-%d %H:%M")
 
 
-def student_rows(center, ui):
-    """This centre's student records, archived ones included (STU-008)."""
+def student_rows(center, ui, scope=None):
+    """This centre's student records, archived ones included (STU-008).
+
+    `scope` is the caller's read scope (`_student_scope`): None means every
+    record of this centre, a set of ids means only those. An instructor's set
+    is the students of the cohorts they are assigned to, so the list never
+    names a learner the service would refuse to open (SEC-001: the page and
+    the service answer with one rule, and the list is narrowed server-side,
+    not by hiding rows in the template).
+    """
+    queryset = Student.objects.filter(organization=center)
+    if scope is not None:
+        queryset = queryset.filter(pk__in=scope)
     return [
         {
             "number": record.student_number,
             "name": record.name,
             "status": ui["status_" + record.status],
         }
-        for record in Student.objects.filter(organization=center).order_by(
-            "student_number"
-        )
+        for record in queryset.order_by("student_number")
     ]
 
 
@@ -331,7 +341,7 @@ def students_page(request, slug):
     return page(
         request,
         "students",
-        {"students": student_rows(center, ui)},
+        {"students": student_rows(center, ui, _student_scope(request.user, center))},
         center=center,
     )
 
@@ -347,7 +357,10 @@ def student_profile(request, slug, number):
     if not role_has_permission(member.role, "students.view"):
         return page(request, "denied", {}, center=center, status=403)
     ui = center_ui(center)
-    record = _student_here(center, number)
+    try:
+        record = view_student(request.user, center, number)
+    except PermissionDenied:
+        return page(request, "denied", {}, center=center, status=403)
     if record is None:
         return page(
             request,
@@ -364,9 +377,12 @@ def student_profile(request, slug, number):
             status=404,
         )
     # STU-006's attendance history (ATT-005): shown only to those with access
-    # to attendance, over this centre's sessions of this student.
+    # to attendance, over this centre's sessions of this student, and narrowed
+    # server-side to the instructor's assigned cohorts like every other
+    # attendance read (ATT-004: hiding links is not authorization).
     from apps.academics.models import Attendance, Session
     from apps.academics.reporting import attendance_totals
+    from apps.academics.services import _attendance_scope
     from apps.academics.views import (
         attendance_rows,
         audit_rows,
@@ -389,9 +405,12 @@ def student_profile(request, slug, number):
             record,
             scope=_grade_scope(request.user, center),
         )
+    scope = _attendance_scope(request.user, center)
     attendances = Attendance.objects.filter(
         student=record, session__organization=center
     )
+    if scope is not None:
+        attendances = attendances.filter(session__cohort__id__in=scope)
     session_ids = list(
         attendances.values_list("session_id", flat=True)
     )
@@ -406,7 +425,7 @@ def student_profile(request, slug, number):
             "profile": profile_rows(center, ui, record),
             "applications": application_links(ui, record),
             "attendance": (
-                attendance_rows(center, ui, student=record)
+                attendance_rows(center, ui, student=record, cohorts=scope)
                 if can_view
                 else []
             ),
@@ -419,7 +438,7 @@ def student_profile(request, slug, number):
                 else []
             ),
             "attendance_corrections": (
-                audit_rows(center, ui, student=record)
+                audit_rows(center, ui, student=record, cohorts=scope)
                 if can_correct
                 else []
             ),

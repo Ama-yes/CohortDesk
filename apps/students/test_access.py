@@ -13,6 +13,9 @@ apps/students/tests.py proves. Actions that are part of the page contract
 that is the only path a person has.
 """
 
+from datetime import date, datetime, timezone
+from decimal import Decimal
+
 from django.test import TestCase
 
 from apps.accounts.models import CohortUser
@@ -23,6 +26,15 @@ from apps.organizations.roles import (
     ROLE_OWNER,
     ROLE_RECEPTIONIST,
 )
+from apps.academics.models import (
+    Attendance,
+    Cohort,
+    Course,
+    Enrollment,
+    Session,
+)
+from apps.grading.models import Assessment, Result
+from apps.staff.models import CohortInstructor, Staff
 
 from .models import Application, Student
 
@@ -545,3 +557,446 @@ class TwoCenters(TestCase):
         self.assertIn(self.applications_url(), body)
         self.assertIn('data-kind="students"', body)
         self.assertIn('data-kind="applications"', body)
+
+
+class InstructorCohortScope(TestCase):
+    """D110: an instructor reads only the learners of their assigned cohorts.
+
+    The owner's authorization decision of 2026-11-24: an instructor may open a
+    student profile only when that learner has an enrollment in a cohort the
+    instructor is assigned to, never centre-wide. The fixture is one centre with
+    two cohorts, each assigned to its own instructor, and four learners: one in
+    cohort A only, one in cohort B only, one in both (A enrolled, B withdrawn),
+    and one with no enrollment at all. Every read of personal information - the
+    list, the profile, a direct number, a query, a CSV - is checked against that
+    rule, and the owner and the receptionist are checked to keep their centre-
+    wide access.
+    """
+
+    def setUp(self):
+        self.alpha = Organization.objects.create(
+            name="Alpha Center", slug="alpha-center", primary_currency="DZD"
+        )
+        self.beta = Organization.objects.create(
+            name="Beta Center", slug="beta-center", primary_currency="EUR"
+        )
+        self.owner = CohortUser.objects.create_user(
+            username="alpha-owner", password="x", display_name="Alpha Owner"
+        )
+        self.desk = CohortUser.objects.create_user(
+            username="alpha-desk", password="x", display_name="Alpha Desk"
+        )
+        self.teacher_a = CohortUser.objects.create_user(
+            username="alpha-teacher-a", password="x", display_name="A Teacher"
+        )
+        self.teacher_b = CohortUser.objects.create_user(
+            username="alpha-teacher-b", password="x", display_name="B Teacher"
+        )
+        self.lone_teacher = CohortUser.objects.create_user(
+            username="alpha-teacher-none", password="x", display_name="No Cohorts"
+        )
+        self.beta_owner = CohortUser.objects.create_user(
+            username="beta-owner", password="x", display_name="Beta Owner"
+        )
+        Members.objects.create(
+            user=self.owner, organization=self.alpha, role=ROLE_OWNER
+        )
+        Members.objects.create(
+            user=self.desk, organization=self.alpha, role=ROLE_RECEPTIONIST
+        )
+        for teacher in (self.teacher_a, self.teacher_b, self.lone_teacher):
+            Members.objects.create(
+                user=teacher, organization=self.alpha, role=ROLE_INSTRUCTOR
+            )
+        Members.objects.create(
+            user=self.beta_owner, organization=self.beta, role=ROLE_OWNER
+        )
+        self.course = Course.objects.create(
+            organization=self.alpha, title="Alpha Course"
+        )
+        self.cohort_a = Cohort.objects.create(
+            organization=self.alpha, course=self.course, name="Morning Cohort"
+        )
+        self.cohort_b = Cohort.objects.create(
+            organization=self.alpha, course=self.course, name="Evening Cohort"
+        )
+        self.staff_a = Staff.objects.create(
+            organization=self.alpha, staff_number="SA-1", name="A Teacher", user=self.teacher_a
+        )
+        self.staff_b = Staff.objects.create(
+            organization=self.alpha, staff_number="SB-1", name="B Teacher", user=self.teacher_b
+        )
+        CohortInstructor.objects.create(
+            organization=self.alpha, cohort=self.cohort_a, staff=self.staff_a
+        )
+        CohortInstructor.objects.create(
+            organization=self.alpha, cohort=self.cohort_b, staff=self.staff_b
+        )
+        self.assigned = Student.objects.create(
+            organization=self.alpha,
+            student_number="AT-A1",
+            name="Assigned Learner",
+            contact="assigned@example.test",
+            address="9 Morning Road",
+            status="active",
+        )
+        self.unassigned = Student.objects.create(
+            organization=self.alpha,
+            student_number="AT-B1",
+            name="Unassigned Learner",
+            contact="unassigned@example.test",
+            status="active",
+        )
+        self.no_cohort = Student.objects.create(
+            organization=self.alpha,
+            student_number="AT-N1",
+            name="No Cohort Learner",
+            contact="none@example.test",
+            status="active",
+        )
+        self.both = Student.objects.create(
+            organization=self.alpha,
+            student_number="AT-AB1",
+            name="Both Cohorts Learner",
+            contact="both@example.test",
+            status="active",
+        )
+        self.enroll_a = Enrollment.objects.create(
+            organization=self.alpha, cohort=self.cohort_a, student=self.assigned
+        )
+        Enrollment.objects.create(
+            organization=self.alpha, cohort=self.cohort_b, student=self.unassigned
+        )
+        self.both_a = Enrollment.objects.create(
+            organization=self.alpha, cohort=self.cohort_a, student=self.both
+        )
+        self.both_b = Enrollment.objects.create(
+            organization=self.alpha,
+            cohort=self.cohort_b,
+            student=self.both,
+            status="withdrawn",
+        )
+        self.beta_learner = Student.objects.create(
+            organization=self.beta,
+            student_number="AT-A",
+            name="Beta Learner",
+            contact="beta@example.test",
+        )
+        self.session_a = Session.objects.create(
+            organization=self.alpha,
+            cohort=self.cohort_a,
+            start_at=datetime(2026, 1, 5, 9, 0, tzinfo=timezone.utc),
+            end_at=datetime(2026, 1, 5, 12, 0, tzinfo=timezone.utc),
+        )
+        self.session_b = Session.objects.create(
+            organization=self.alpha,
+            cohort=self.cohort_b,
+            start_at=datetime(2026, 1, 6, 14, 0, tzinfo=timezone.utc),
+            end_at=datetime(2026, 1, 6, 17, 0, tzinfo=timezone.utc),
+        )
+        Attendance.objects.create(
+            organization=self.alpha,
+            session=self.session_a,
+            student=self.assigned,
+            status="present",
+        )
+        Attendance.objects.create(
+            organization=self.alpha,
+            session=self.session_a,
+            student=self.both,
+            status="present",
+        )
+        Attendance.objects.create(
+            organization=self.alpha,
+            session=self.session_b,
+            student=self.unassigned,
+            status="present",
+        )
+        Attendance.objects.create(
+            organization=self.alpha,
+            session=self.session_b,
+            student=self.both,
+            status="present",
+        )
+        self.assessment_b = Assessment.objects.create(
+            organization=self.alpha,
+            cohort=self.cohort_b,
+            title="Evening Assessment",
+            assessment_type="exam",
+            date=date(2026, 1, 20),
+            max_score=Decimal("10.00"),
+            created_by=self.owner,
+        )
+        Result.objects.create(
+            organization=self.alpha,
+            assessment=self.assessment_b,
+            enrollment=self.both_b,
+            student=self.both,
+            score=Decimal("7.00"),
+            recorded_by=self.owner,
+        )
+
+    def students_url(self, center=None):
+        return "/o/{}/center/students/".format((center or self.alpha).slug)
+
+    def profile_url(self, number, center=None):
+        return "{}{}/".format(self.students_url(center), number)
+
+    def manage_url(self, center=None):
+        return "{}{}".format(self.students_url(center), "manage/")
+
+    def register_url(self, number):
+        return "/o/{}/center/attendance/{}/register.csv".format(
+            self.alpha.slug, number
+        )
+
+    def reports_url(self):
+        return "/o/{}/center/reports/enrollments.csv".format(self.alpha.slug)
+
+    def body(self, answer):
+        return answer.content.decode()
+
+    def names_shown(self, body):
+        """Which of the four learners this centre's page actually shows."""
+        return [
+            name
+            for name in (
+                "Assigned Learner",
+                "Unassigned Learner",
+                "No Cohort Learner",
+                "Both Cohorts Learner",
+            )
+            if name in body
+        ]
+
+    # -- instructor A: assigned cohort A only ----------------------------
+
+    def test_instructor_a_opens_assigned_learner(self):
+        """AT-A1 is enrolled in cohort A, which instructor A teaches."""
+        self.client.force_login(self.teacher_a)
+        answer = self.client.get(self.profile_url("AT-A1"))
+        self.assertEqual(answer.status_code, 200)
+        self.assertEqual(answer["X-CohortDesk-Page"], "student")
+        body = self.body(answer)
+        self.assertIn("Assigned Learner", body)
+        self.assertIn("assigned@example.test", body)
+        self.assertIn("9 Morning Road", body)
+
+    def test_instructor_a_opens_both_cohorts_learner(self):
+        """AT-AB1 is enrolled in cohort A (and withdrawn in B): A's scope allows
+        it because the enrollment in A is the link, whatever its status."""
+        self.client.force_login(self.teacher_a)
+        answer = self.client.get(self.profile_url("AT-AB1"))
+        self.assertEqual(answer.status_code, 200)
+        self.assertEqual(answer["X-CohortDesk-Page"], "student")
+        self.assertIn("Both Cohorts Learner", self.body(answer))
+
+    def test_instructor_a_denied_unassigned_learner(self):
+        """AT-B1 is enrolled only in cohort B, which instructor A does not teach.
+        The answer is this centre's not-found page, never a hint that a record
+        exists (SEC-003)."""
+        self.client.force_login(self.teacher_a)
+        answer = self.client.get(self.profile_url("AT-B1"))
+        self.assertEqual(answer.status_code, 404)
+        self.assertEqual(answer["X-CohortDesk-Page"], "not_found")
+        self.assertNotIn("Unassigned Learner", self.body(answer))
+        self.assertNotIn("unassigned@example.test", self.body(answer))
+
+    def test_instructor_a_denied_no_cohort_learner(self):
+        """AT-N1 has no enrollment at all: denied exactly as a number with no
+        record here."""
+        self.client.force_login(self.teacher_a)
+        answer = self.client.get(self.profile_url("AT-N1"))
+        self.assertEqual(answer.status_code, 404)
+        self.assertEqual(answer["X-CohortDesk-Page"], "not_found")
+        self.assertNotIn("No Cohort Learner", self.body(answer))
+
+    def test_instructor_a_list_narrowed_to_assigned_cohort(self):
+        """The list page shows only the learners of cohort A: Assigned and Both
+        Cohorts. Unassigned and No Cohort names never appear."""
+        self.client.force_login(self.teacher_a)
+        body = self.body(self.client.get(self.students_url()))
+        self.assertIn("Assigned Learner", body)
+        self.assertIn("Both Cohorts Learner", body)
+        self.assertNotIn("Unassigned Learner", body)
+        self.assertNotIn("No Cohort Learner", body)
+        self.assertNotIn("unassigned@example.test", body)
+        self.assertNotIn("none@example.test", body)
+
+    def test_instructor_a_query_params_reveal_nothing(self):
+        """Forged query strings on the list page never add a denied learner."""
+        self.client.force_login(self.teacher_a)
+        for query in ("?q=Unassigned", "?name=No+Cohort", "?number=AT-B1"):
+            body = self.body(self.client.get(self.students_url() + query))
+            self.assertNotIn("Unassigned Learner", body)
+            self.assertNotIn("No Cohort Learner", body)
+
+    def test_instructor_a_attendance_register_csv_scoped(self):
+        """Session A belongs to cohort A: instructor A may export it. Session B
+        belongs to cohort B: the CSV address answers this centre's not-found."""
+        self.client.force_login(self.teacher_a)
+        answer = self.client.get(self.register_url(str(self.session_a.pk)))
+        self.assertEqual(answer.status_code, 200)
+        self.assertIn("text/csv", answer["Content-Type"])
+        csv_body = self.body(answer)
+        self.assertIn("Assigned Learner", csv_body)
+        self.assertIn("Both Cohorts Learner", csv_body)
+        self.assertNotIn("Unassigned Learner", csv_body)
+        answer = self.client.get(self.register_url(str(self.session_b.pk)))
+        self.assertEqual(answer.status_code, 404)
+        self.assertEqual(answer["X-CohortDesk-Page"], "not_found")
+        self.assertNotIn("Unassigned Learner", self.body(answer))
+
+    def test_instructor_a_grading_assessment_denied(self):
+        """Assessment B belongs to cohort B: _grade_scope denies it to
+        instructor A exactly as the attendance scope does."""
+        self.client.force_login(self.teacher_a)
+        answer = self.client.get(
+            "/o/alpha-center/center/grading/assessments/{}/".format(
+                self.assessment_b.pk
+            )
+        )
+        self.assertEqual(answer.status_code, 404)
+        self.assertEqual(answer["X-CohortDesk-Page"], "not_found")
+        self.assertNotIn("Evening Assessment", self.body(answer))
+        self.assertNotIn("Both Cohorts Learner", self.body(answer))
+
+    def test_instructor_a_cross_centre_denied(self):
+        """Beta centre: instructor A has no membership there, so the address
+        answers the project problem page, never a beta record."""
+        self.client.force_login(self.teacher_a)
+        answer = self.client.get(self.profile_url("AT-A", self.beta))
+        self.assertEqual(answer.status_code, 404)
+        self.assertEqual(answer["X-CohortDesk-Page"], "problem")
+        self.assertNotIn("Beta Learner", self.body(answer))
+
+    def test_instructor_a_post_to_manage_denied(self):
+        """Instructor A has no students.manage permission: the manage page and
+        every POST to it answer 403, and nothing is saved."""
+        self.client.force_login(self.teacher_a)
+        answer = self.client.get(self.manage_url())
+        self.assertEqual(answer.status_code, 403)
+        self.assertEqual(answer["X-CohortDesk-Page"], "denied")
+        answer = self.client.post(
+            self.manage_url(),
+            {
+                "students_action": "create",
+                "student_number": "AT-99",
+                "name": "Not Allowed",
+            },
+        )
+        self.assertEqual(answer.status_code, 403)
+        self.assertEqual(
+            Student.objects.filter(organization=self.alpha).count(), 4
+        )
+
+    # -- instructor B: assigned cohort B only ----------------------------
+
+    def test_instructor_b_opens_assigned_learner(self):
+        self.client.force_login(self.teacher_b)
+        answer = self.client.get(self.profile_url("AT-B1"))
+        self.assertEqual(answer.status_code, 200)
+        self.assertEqual(answer["X-CohortDesk-Page"], "student")
+        self.assertIn("Unassigned Learner", self.body(answer))
+
+    def test_instructor_b_opens_both_cohorts_learner(self):
+        """AT-AB1 has a withdrawn enrollment in cohort B: the enrollment row is
+        the link, so instructor B may read the profile."""
+        self.client.force_login(self.teacher_b)
+        answer = self.client.get(self.profile_url("AT-AB1"))
+        self.assertEqual(answer.status_code, 200)
+        self.assertEqual(answer["X-CohortDesk-Page"], "student")
+        self.assertIn("Both Cohorts Learner", self.body(answer))
+
+    def test_instructor_b_denied_cohort_a_learner(self):
+        self.client.force_login(self.teacher_b)
+        answer = self.client.get(self.profile_url("AT-A1"))
+        self.assertEqual(answer.status_code, 404)
+        self.assertEqual(answer["X-CohortDesk-Page"], "not_found")
+        self.assertNotIn("Assigned Learner", self.body(answer))
+        self.assertNotIn("9 Morning Road", self.body(answer))
+
+    def test_instructor_b_list_narrowed_to_cohort_b(self):
+        self.client.force_login(self.teacher_b)
+        body = self.body(self.client.get(self.students_url()))
+        self.assertIn("Unassigned Learner", body)
+        self.assertIn("Both Cohorts Learner", body)
+        self.assertNotIn("Assigned Learner", body)
+        self.assertNotIn("No Cohort Learner", body)
+        self.assertNotIn("assigned@example.test", body)
+
+    # -- instructor with no cohort assignment ----------------------------
+
+    def test_lone_instructor_sees_no_students(self):
+        """An instructor with no staff record and no cohort assignment sees an
+        empty list and cannot open any profile."""
+        self.client.force_login(self.lone_teacher)
+        body = self.body(self.client.get(self.students_url()))
+        self.assertIn("No student record has been made at this center yet.", body)
+        self.assertNotIn("Assigned Learner", body)
+        self.assertNotIn("Unassigned Learner", body)
+        self.assertNotIn("No Cohort Learner", body)
+        self.assertNotIn("Both Cohorts Learner", body)
+        for number in ("AT-A1", "AT-B1", "AT-N1", "AT-AB1"):
+            answer = self.client.get(self.profile_url(number))
+            self.assertEqual(answer.status_code, 404)
+            self.assertEqual(answer["X-CohortDesk-Page"], "not_found")
+
+    # -- owner and receptionist keep centre-wide access ------------------
+
+    def test_owner_sees_every_learner_in_list(self):
+        self.client.force_login(self.owner)
+        body = self.body(self.client.get(self.students_url()))
+        for name in (
+            "Assigned Learner",
+            "Unassigned Learner",
+            "No Cohort Learner",
+            "Both Cohorts Learner",
+        ):
+            self.assertIn(name, body)
+
+    def test_owner_opens_every_profile(self):
+        self.client.force_login(self.owner)
+        for number in ("AT-A1", "AT-B1", "AT-N1", "AT-AB1"):
+            answer = self.client.get(self.profile_url(number))
+            self.assertEqual(answer.status_code, 200)
+            self.assertEqual(answer["X-CohortDesk-Page"], "student")
+
+    def test_receptionist_sees_every_learner_in_list(self):
+        self.client.force_login(self.desk)
+        body = self.body(self.client.get(self.students_url()))
+        for name in (
+            "Assigned Learner",
+            "Unassigned Learner",
+            "No Cohort Learner",
+            "Both Cohorts Learner",
+        ):
+            self.assertIn(name, body)
+
+    def test_receptionist_opens_every_profile(self):
+        self.client.force_login(self.desk)
+        for number in ("AT-A1", "AT-B1", "AT-N1", "AT-AB1"):
+            answer = self.client.get(self.profile_url(number))
+            self.assertEqual(answer.status_code, 200)
+            self.assertEqual(answer["X-CohortDesk-Page"], "student")
+
+    def test_receptionist_enrollment_csv_allowed(self):
+        """The desk role has academics.report.view: the enrollment CSV carries
+        every centre row, unlike an instructor who is denied the CSV outright."""
+        self.client.force_login(self.desk)
+        answer = self.client.get(self.reports_url())
+        self.assertEqual(answer.status_code, 200)
+        self.assertIn("text/csv", answer["Content-Type"])
+        csv_body = self.body(answer)
+        self.assertIn("Assigned Learner", csv_body)
+        self.assertIn("Unassigned Learner", csv_body)
+
+    def test_instructor_denied_enrollment_csv(self):
+        """Instructor A has no academics.report.view: the enrollment CSV answers
+        403 denied, never a CSV body."""
+        self.client.force_login(self.teacher_a)
+        answer = self.client.get(self.reports_url())
+        self.assertEqual(answer.status_code, 403)
+        self.assertEqual(answer["X-CohortDesk-Page"], "denied")
+        self.assertNotIn("Assigned Learner", self.body(answer))
+        self.assertNotIn("Unassigned Learner", self.body(answer))

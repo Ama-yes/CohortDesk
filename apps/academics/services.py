@@ -1313,18 +1313,21 @@ def correct_attendance(user, organization, session_number, student_number,
     except ValidationError as error:
         return None, _field_problems(error), []
     previous = existing.status
-    existing.status = target
-    existing.status_changed_at = timezone.now()
-    existing.save(update_fields=["status", "status_changed_at"])
-    log = AuditLog(
-        organization=organization,
-        session=session,
-        student=student,
-        actor=user,
-        action=AUDIT_ATTENDANCE_CORRECTED,
-        previous_status=previous,
-        new_status=target,
-    )
-    log.full_clean(exclude=["organization"])
-    log.save()
+    with transaction.atomic():
+        # RULE 6.5: the corrected row and its audit row commit together, so a
+        # failed audit save can never leave a changed status without history.
+        existing.status = target
+        existing.status_changed_at = timezone.now()
+        existing.save(update_fields=["status", "status_changed_at"])
+        log = AuditLog(
+            organization=organization,
+            session=session,
+            student=student,
+            actor=user,
+            action=AUDIT_ATTENDANCE_CORRECTED,
+            previous_status=previous,
+            new_status=target,
+        )
+        log.full_clean(exclude=["organization"])
+        log.save()
     return existing, [], []

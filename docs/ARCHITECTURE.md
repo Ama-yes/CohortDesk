@@ -123,8 +123,12 @@ re-decides on the server.
 - A record identifier from another organization is looked up **within the
   caller's organization**, so it resolves to the caller's own 404 rather than
   foreign data.
+- Membership writes are centre-scoped: an account already attached to another
+  centre cannot be added to this one; the invite form only offers this centre's
+  own people and accounts of no centre.
 - CSVs use the same permission check and the same scoped query as their HTML
-  siblings.
+  siblings, and every export writes cells through one shared writer that
+  neutralises spreadsheet formula injection.
 
 ## 5. Data model
 
@@ -190,9 +194,12 @@ Two rules shape the matrix:
 
 1. **Hiding is not authorization.** Templates filter navigation by the same
    codes, but every view checks again. Tests prove both independently.
-2. **Instructor scope is server-side.** Attendance and grading narrow an
-   instructor to cohorts assigned through `CohortInstructor`. The narrowing is
-   applied to the queryset, not to the rendered list.
+2. **Instructor scope is server-side.** Attendance, grading and student
+   profiles narrow an instructor to cohorts assigned through `CohortInstructor`.
+   For student profiles the link is the cohort's enrollment rows: any
+   enrollment record in an assigned cohort, whatever its status, keeps that
+   learner's profile reachable; every other profile answers the centre's own
+   404. The narrowing is applied to the queryset, not to the rendered list.
 
 ## 7. Money and grading invariants
 
@@ -209,7 +216,11 @@ These two domains carry the strongest correctness requirements.
 - Posting takes locks in one documented order (obligation, installments,
   payment, counter), so two concurrent postings cannot interleave.
 - A `FinanceSubmission` token with a unique centre/person/token constraint and
-  exactly one saved outcome prevents double-posting a single submission.
+  exactly one saved outcome prevents double-posting a single submission; tokens
+  are length-bounded before storage.
+- Status moves (obligation open→paid, payment→reversed) are revalidated from
+  the locked rows inside the same block, so a concurrent posting cannot slip a
+  stale status through.
 - On SQLite, `select_for_update` serializes the whole transaction; the
   PostgreSQL race test is therefore skipped and no concurrency claim is made.
 
@@ -264,7 +275,7 @@ centre's glossary (`center_ui`), renders CSRF for forms, and sets the
 skip the glossary or the header.
 
 All product copy lives in `apps/i18n.py` (`UI_STRINGS`). English is complete
-(896 keys). French has 75 entries and Arabic 135; missing keys fall back to
+(897 keys). French has 75 entries and Arabic 135; missing keys fall back to
 English. No translation is invented.
 
 ## 11. Testing strategy
@@ -277,7 +288,7 @@ methods and CSV gating. Two additional modules, `test_scheduling.py` and
 through the URL layer, so authorization is proven at the boundary rather than
 at the function that happens to be called.
 
-Verified baseline: **730 tests, OK, 1 skipped** (PostgreSQL-only race check).
+Verified baseline: **789 tests, OK, 1 skipped** (PostgreSQL-only race check).
 
 ## 12. Explicit non-goals in the current code
 
